@@ -1,0 +1,7 @@
+{
+  "name": "WorkFlow AI Voice Assistant",
+  "description": "A voice-controlled Kanban board for business workflow management using Gemini 2.5 Live API.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
