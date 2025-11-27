@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GoogleGenAI, FunctionDeclaration, Type, LiveServerMessage, Modality } from '@google/genai';
+import * as XLSX from 'xlsx';
 import { Mic, MicOff, Layout, Plus, LogOut } from 'lucide-react';
 import KanbanBoard from './components/KanbanBoard';
 import Visualizer from './components/Visualizer';
@@ -10,6 +11,9 @@ import { createPcmBlob, base64ToArrayBuffer, pcmToAudioBuffer } from './utils/au
 import { auth, db } from './src/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
+
+// Yöneticiler Listesi
+const ADMIN_EMAILS = ['caner192@hotmail.com'];
 
 // --- Tool Definitions ---
 
@@ -110,6 +114,48 @@ export default function App() {
   // Calculate next Order Number
   const nextOrderNumber = tasks.length > 0 ? Math.max(...tasks.map(t => t.orderNumber)) + 1 : 1;
 
+  // Excel'e Aktar (Export)
+  const handleExportExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(tasks);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "İş Listesi");
+    XLSX.writeFile(wb, "Is_Takip_Listesi.xlsx");
+  };
+
+  // Excel'den Yükle (Import)
+  const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const bstr = evt.target?.result;
+      const wb = XLSX.read(bstr, { type: 'binary' });
+      const wsname = wb.SheetNames[0];
+      const ws = wb.Sheets[wsname];
+      const data = XLSX.utils.sheet_to_json(ws) as Task[];
+
+      // Verileri Firestore'a ekle
+      data.forEach(async (task) => {
+        // ID çakışmasını önlemek için yeni ID ile ekleyelim veya mevcut ID'yi kullanalım
+        // Burada basitçe yeni kayıt olarak ekliyoruz.
+        const { id, ...taskData } = task; // ID'yi çıkar, Firestore kendi ID'sini versin
+        try {
+          await addDoc(collection(db, 'tasks'), {
+            ...taskData,
+            createdAt: serverTimestamp(),
+            createdBy: user?.email || 'Excel Import',
+            lastUpdatedBy: user?.email || 'Excel Import'
+          });
+        } catch (error) {
+          console.error("Error adding document: ", error);
+        }
+      });
+      alert('Veriler başarıyla yüklendi!');
+    };
+    reader.readAsBinaryString(file);
+  };
+
   // Handlers
   const handleAddTaskClick = () => {
     setSelectedTask(undefined);
@@ -188,16 +234,16 @@ export default function App() {
           tools: [{ functionDeclarations: toolsDef }],
           responseModalities: [Modality.AUDIO],
           systemInstruction: `Sen bir iş akış yöneticisisin. Aşağıdaki 5 aşamalı süreci yönetiyorsun:
-          1. TO_CHECK: Kontrolü Yapılacak İşler (İlk aşama)
-          2. CHECK_COMPLETED: Kontrolü Yapılan İşler (İkinci aşama)
-          3. DEPOSIT_PAID: Depozito Yatırıldı
-          4. GAS_OPENED: Gaz Açıldı
-          5. SERVICE_DIRECTED: Servis Yönlendirildi
+        1. TO_CHECK: Kontrolü Yapılacak İşler (İlk aşama)
+        2. CHECK_COMPLETED: Kontrolü Yapılan İşler (İkinci aşama)
+        3. DEPOSIT_PAID: Depozito Yatırıldı
+        4. GAS_OPENED: Gaz Açıldı
+        5. SERVICE_DIRECTED: Servis Yönlendirildi
 
-          Kullanıcı Türkçe konuşacak.
-          Müşteri eklerken adres veya telefon bilgisi verilirse onları da kaydet.
-          "Sıra no" veya "Numara" denirse ilgili kartın numarasını söyleyebilirsin.
-          Profesyonel ve yardımsever ol.`,
+        Kullanıcı Türkçe konuşacak.
+        Müşteri eklerken adres veya telefon bilgisi verilirse onları da kaydet.
+        "Sıra no" veya "Numara" denirse ilgili kartın numarasını söyleyebilirsin.
+        Profesyonel ve yardımsever ol.`,
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Fenrir' } }
           }
@@ -380,6 +426,23 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Yönetici Paneli */}
+          {user && ADMIN_EMAILS.includes(user.email || '') && (
+            <div className="flex items-center gap-2 bg-yellow-500/10 p-2 rounded-lg border border-yellow-500/20">
+              <span className="text-xs text-yellow-500 font-bold px-2">YÖNETİCİ</span>
+              <button
+                onClick={handleExportExcel}
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
+              >
+                📥 İndir
+              </button>
+              <label className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center gap-1 cursor-pointer">
+                📤 Yükle
+                <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleImportExcel} />
+              </label>
+            </div>
+          )}
+
           {error && <span className="text-red-400 text-sm bg-red-900/20 px-3 py-1 rounded-full border border-red-800">{error}</span>}
           <div className="flex items-center gap-3 bg-slate-900 rounded-full px-4 py-2 border border-slate-700">
             <Visualizer isActive={connected} isSpeaking={isSpeaking} />
@@ -387,8 +450,8 @@ export default function App() {
             <button
               onClick={connected ? disconnect : connectToGemini}
               className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${connected
-                  ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50'
-                  : 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-500/20'
+                ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50'
+                : 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-500/20'
                 }`}
             >
               {connected ? (
