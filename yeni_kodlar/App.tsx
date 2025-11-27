@@ -1,0 +1,432 @@
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { GoogleGenAI, FunctionDeclaration, Type, LiveServerMessage, Modality } from '@google/genai';
+import { Layout, Plus } from 'lucide-react';
+import KanbanBoard from './components/KanbanBoard';
+import TaskModal from './components/TaskModal';
+import { Task, TaskStatus } from './types';
+import { createPcmBlob, base64ToArrayBuffer, pcmToAudioBuffer } from './utils/audioUtils';
+
+// --- Tool Definitions ---
+
+const toolsDef: FunctionDeclaration[] = [
+  {
+    name: 'addTask',
+    description: 'Yeni bir iş veya müşteri ekle.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        title: { type: Type.STRING, description: 'İşin veya müşterinin adı (Örn: Daire 5, Ahmet Bey)' },
+        column: { 
+          type: Type.STRING, 
+          description: 'Durum kolonu: TO_CHECK, CHECK_COMPLETED, DEPOSIT_PAID, GAS_OPENED, SERVICE_DIRECTED' 
+        },
+        assignee: { type: Type.STRING, description: 'İşin atandığı kişi' },
+        phone: { type: Type.STRING, description: 'Müşteri telefon numarası' },
+        address: { type: Type.STRING, description: 'Müşteri adresi veya daire bilgisi' }
+      },
+      required: ['title'],
+    },
+  },
+  {
+    name: 'moveTask',
+    description: 'Bir işi başka bir aşamaya taşı.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        searchTitle: { type: Type.STRING, description: 'Taşınacak işin adı' },
+        targetColumn: { 
+          type: Type.STRING, 
+          description: 'Hedef kolon: TO_CHECK, CHECK_COMPLETED, DEPOSIT_PAID, GAS_OPENED, SERVICE_DIRECTED' 
+        },
+      },
+      required: ['searchTitle', 'targetColumn'],
+    },
+  },
+  {
+    name: 'getBoardStatus',
+    description: 'Tüm işlerin durumunu özetle.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {},
+    },
+  },
+];
+
+const INITIAL_TASKS: Task[] = [
+  { 
+    id: '1', 
+    orderNumber: 1, 
+    title: 'Daire 14 - Mehmet Yılmaz', 
+    status: TaskStatus.DEPOSIT_PAID, 
+    assignee: 'Ali Usta', 
+    phone: '0532 555 11 22', 
+    address: 'Papatya Apt. No:14', 
+    isCheckVerified: true,
+    generalNote: 'Müşteri sabah aranmasını istiyor.',
+    gasOpeningDate: '2024-03-25'
+  },
+  { 
+    id: '2', 
+    orderNumber: 2, 
+    title: 'Daire 8 - Kombi Kontrolü', 
+    status: TaskStatus.CHECK_COMPLETED, 
+    assignee: 'Veli Usta', 
+    teamNote: 'Kombi basıncı düşük, kontrol yapıldı.',
+    isCheckVerified: true,
+    serviceSerialNumber: 'SN-99887766'
+  },
+  { 
+    id: '3', 
+    orderNumber: 3, 
+    title: 'Site A Blok Doğalgaz', 
+    status: TaskStatus.GAS_OPENED, 
+    assignee: 'Ayşe Hanım',
+    gasOpeningDate: '2024-03-20',
+    gasNote: 'Sayaç montajı tamamlandı.'
+  },
+  { 
+    id: '4', 
+    orderNumber: 4, 
+    title: 'Daire 2 - Fatma Hanım', 
+    status: TaskStatus.TO_CHECK, 
+    assignee: 'Mehmet Usta', 
+    address: 'Gül Sokak No:2',
+    phone: '0544 333 22 11'
+  },
+];
+
+export default function App() {
+  const [connected, setConnected] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+  const [isSpeaking, setIsSpeaking] = useState(false); // AI Speaking state
+  const [error, setError] = useState<string | null>(null);
+  
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | undefined>(undefined);
+  
+  // Audio Refs
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const inputAudioContextRef = useRef<AudioContext | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const nextStartTimeRef = useRef<number>(0);
+  const sessionPromiseRef = useRef<Promise<any> | null>(null);
+  
+  // Keep track of tasks in a ref for the tool callbacks to access latest state without re-binding
+  const tasksRef = useRef(tasks);
+  useEffect(() => { tasksRef.current = tasks; }, [tasks]);
+
+  // Calculate next Order Number
+  const nextOrderNumber = tasks.length > 0 ? Math.max(...tasks.map(t => t.orderNumber)) + 1 : 1;
+
+  // Handlers for Modal
+  const handleAddTaskClick = () => {
+    setSelectedTask(undefined);
+    setIsModalOpen(true);
+  };
+
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveTask = (taskData: Partial<Task>) => {
+    if (selectedTask) {
+      // Edit Mode
+      setTasks(prev => prev.map(t => t.id === selectedTask.id ? { ...t, ...taskData } as Task : t));
+    } else {
+      // Add Mode
+      const newTask: Task = {
+        id: Date.now().toString(),
+        orderNumber: nextOrderNumber,
+        title: taskData.title || 'Yeni Müşteri',
+        status: taskData.status || TaskStatus.TO_CHECK,
+        assignee: taskData.assignee || '',
+        date: taskData.date,
+        address: taskData.address,
+        phone: taskData.phone,
+        
+        // New Fields
+        generalNote: taskData.generalNote,
+        teamNote: taskData.teamNote,
+        isCheckVerified: taskData.isCheckVerified || false,
+        gasOpeningDate: taskData.gasOpeningDate,
+        gasNote: taskData.gasNote,
+        serviceSerialNumber: taskData.serviceSerialNumber,
+        serviceNote: taskData.serviceNote
+      };
+      setTasks(prev => [...prev, newTask]);
+    }
+    setIsModalOpen(false);
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+    setIsModalOpen(false);
+  };
+
+  const connectToGemini = async () => {
+    try {
+      setError(null);
+      
+      // 1. Setup Audio Contexts
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      inputAudioContextRef.current = new AudioContextClass({ sampleRate: 16000 });
+      audioContextRef.current = new AudioContextClass({ sampleRate: 24000 });
+      
+      // 2. Get Microphone Access
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: {
+        channelCount: 1,
+        sampleRate: 16000,
+      }});
+      mediaStreamRef.current = stream;
+
+      // 3. Initialize Gemini
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      
+      // 4. Define Session Promise
+      // CRITICAL: We create the promise but don't await it immediately for streaming setup
+      const sessionPromise = ai.live.connect({
+        model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+        config: {
+          tools: [{ functionDeclarations: toolsDef }],
+          responseModalities: [Modality.AUDIO],
+          systemInstruction: `Sen bir iş akış yöneticisisin. Aşağıdaki 5 aşamalı süreci yönetiyorsun:
+          1. TO_CHECK: Kontrolü Yapılacak İşler (İlk aşama)
+          2. CHECK_COMPLETED: Kontrolü Yapılan İşler (İkinci aşama)
+          3. DEPOSIT_PAID: Depozito Yatırıldı
+          4. GAS_OPENED: Gaz Açıldı
+          5. SERVICE_DIRECTED: Servis Yönlendirildi
+
+          Kullanıcı Türkçe konuşacak.
+          Müşteri eklerken adres veya telefon bilgisi verilirse onları da kaydet.
+          "Sıra no" veya "Numara" denirse ilgili kartın numarasını söyleyebilirsin.
+          Profesyonel ve yardımsever ol.`,
+          speechConfig: {
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Fenrir' } }
+          }
+        },
+        callbacks: {
+          onopen: () => {
+            console.log('Gemini Live Connection Opened');
+            setConnected(true);
+            
+            // Start Audio Input Stream
+            if (!inputAudioContextRef.current || !mediaStreamRef.current) return;
+            
+            const source = inputAudioContextRef.current.createMediaStreamSource(mediaStreamRef.current);
+            const processor = inputAudioContextRef.current.createScriptProcessor(4096, 1, 1);
+            
+            processor.onaudioprocess = (e) => {
+              const inputData = e.inputBuffer.getChannelData(0);
+              const pcmBlob = createPcmBlob(inputData);
+              sessionPromise.then(session => {
+                session.sendRealtimeInput({ media: pcmBlob });
+              });
+            };
+
+            source.connect(processor);
+            processor.connect(inputAudioContextRef.current.destination);
+            
+            sourceRef.current = source;
+            processorRef.current = processor;
+          },
+          onmessage: async (msg: LiveServerMessage) => {
+             // Handle Tool Calls
+             if (msg.toolCall) {
+              console.log('Tool Call Received:', msg.toolCall);
+              const functionResponses = [];
+              
+              for (const fc of msg.toolCall.functionCalls) {
+                let result: any = { status: 'error', message: 'Bilinmeyen işlem' };
+                
+                if (fc.name === 'addTask') {
+                  const currentMaxOrder = tasksRef.current.length > 0 ? Math.max(...tasksRef.current.map(t => t.orderNumber)) : 0;
+                  const newOrder = currentMaxOrder + 1;
+                  const args = fc.args as any;
+
+                  const newTask: Task = {
+                    id: Date.now().toString(),
+                    orderNumber: newOrder,
+                    title: args.title,
+                    status: args.column ? args.column as TaskStatus : TaskStatus.TO_CHECK,
+                    assignee: args.assignee || 'Atanmadı',
+                    phone: args.phone || '',
+                    address: args.address || ''
+                  };
+                  setTasks(prev => [...prev, newTask]);
+                  result = { status: 'success', taskId: newTask.id, orderNumber: newTask.orderNumber, message: 'İş eklendi' };
+                } 
+                else if (fc.name === 'moveTask') {
+                  const search = ((fc.args as any).searchTitle || '').toLowerCase();
+                  const target = (fc.args as any).targetColumn;
+                  const taskIndex = tasksRef.current.findIndex(t => t.title.toLowerCase().includes(search));
+                  
+                  if (taskIndex !== -1) {
+                    const task = tasksRef.current[taskIndex];
+                    const updatedTasks = [...tasksRef.current];
+                    updatedTasks[taskIndex] = { ...task, status: target as TaskStatus };
+                    setTasks(updatedTasks);
+                    result = { status: 'success', message: `"${task.title}" taşındı: ${target}` };
+                  } else {
+                    result = { status: 'not_found', message: 'İş bulunamadı' };
+                  }
+                }
+                else if (fc.name === 'getBoardStatus') {
+                   const summary = tasksRef.current.map(t => `No:${t.orderNumber} ${t.title} (${t.status})`).join(', ');
+                   result = { total: tasksRef.current.length, summary };
+                }
+
+                functionResponses.push({
+                  id: fc.id,
+                  name: fc.name,
+                  response: { result }
+                });
+              }
+
+              // Send response back
+              sessionPromise.then(session => {
+                session.sendToolResponse({ functionResponses });
+              });
+            }
+
+            // Handle Audio Output
+            const audioData = msg.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
+            if (audioData && audioContextRef.current) {
+              setIsSpeaking(true);
+              const ctx = audioContextRef.current;
+              const buffer = base64ToArrayBuffer(audioData);
+              const audioBuffer = pcmToAudioBuffer(buffer, ctx, 24000);
+              
+              // Schedule Playback
+              const now = ctx.currentTime;
+              const start = Math.max(now, nextStartTimeRef.current);
+              
+              const source = ctx.createBufferSource();
+              source.buffer = audioBuffer;
+              source.connect(ctx.destination);
+              source.start(start);
+              
+              // Update Cursor
+              nextStartTimeRef.current = start + audioBuffer.duration;
+              
+              source.onended = () => {
+                 if (ctx.currentTime >= nextStartTimeRef.current - 0.1) {
+                   setIsSpeaking(false);
+                 }
+              };
+            }
+          },
+          onclose: () => {
+            console.log('Gemini Connection Closed');
+            disconnect();
+          },
+          onerror: (err) => {
+            console.error('Gemini Error:', err);
+            setError("Bağlantı hatası oluştu. Lütfen tekrar deneyin.");
+            disconnect();
+          }
+        }
+      });
+      
+      sessionPromiseRef.current = sessionPromise;
+      
+    } catch (e) {
+      console.error(e);
+      setError("Mikrofon veya bağlantı başlatılamadı.");
+      setConnected(false);
+    }
+  };
+
+  const disconnect = useCallback(() => {
+    setConnected(false);
+    setIsSpeaking(false);
+    
+    // Stop Tracks
+    mediaStreamRef.current?.getTracks().forEach(track => track.stop());
+    
+    // Disconnect Audio Nodes
+    sourceRef.current?.disconnect();
+    processorRef.current?.disconnect();
+    
+    // Close Audio Contexts
+    inputAudioContextRef.current?.close();
+    audioContextRef.current?.close();
+    
+    // Reset Refs
+    mediaStreamRef.current = null;
+    processorRef.current = null;
+    sourceRef.current = null;
+    inputAudioContextRef.current = null;
+    audioContextRef.current = null;
+    nextStartTimeRef.current = 0;
+    
+    // Close Session if possible
+    sessionPromiseRef.current?.then(session => {
+       // @ts-ignore
+       if(session.close) session.close();
+    });
+    sessionPromiseRef.current = null;
+  }, []);
+
+  return (
+    <div className="flex flex-col h-screen bg-slate-900 text-white font-sans">
+      {/* Header */}
+      <header className="h-16 border-b border-slate-700 bg-slate-800 flex items-center justify-between px-6 shadow-lg z-10">
+        <div className="flex items-center gap-3">
+          <div className="bg-blue-600 p-2 rounded-lg">
+            <Layout className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="font-bold text-lg tracking-tight">ONAY MÜHENDİSLİK İŞ TAKİBİ</h1>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
+           {error && <span className="text-red-400 text-sm bg-red-900/20 px-3 py-1 rounded-full border border-red-800">{error}</span>}
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 flex overflow-hidden relative">
+         <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-slate-900 to-slate-800">
+            {/* Toolbar */}
+            <div className="px-6 py-4 flex items-center justify-between">
+               <h2 className="text-xl font-semibold text-slate-200">Günlük Operasyon</h2>
+               
+               <button 
+                onClick={handleAddTaskClick}
+                className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all shadow-lg shadow-green-500/20">
+                 <Plus className="w-4 h-4" />
+                 Müşteri Ekle
+               </button>
+            </div>
+            
+            {/* Board */}
+            <KanbanBoard tasks={tasks} onTaskClick={handleTaskClick} />
+         </div>
+      </main>
+      
+      {/* Footer / Status Bar */}
+      <footer className="h-8 bg-slate-950 border-t border-slate-800 flex items-center justify-between px-4 text-xs text-slate-500">
+        <div className="flex items-center gap-2">
+        </div>
+        <div>
+           Toplam İş: {tasks.length}
+        </div>
+      </footer>
+
+      {/* Task Modal */}
+      <TaskModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveTask}
+        onDelete={handleDeleteTask}
+        task={selectedTask}
+        nextOrderNumber={nextOrderNumber}
+      />
+    </div>
+  );
+}

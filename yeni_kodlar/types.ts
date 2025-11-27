@@ -12,8 +12,9 @@ export interface Task {
   title: string;
   description?: string;
   status: TaskStatus;
-  assignee?: string;
-  // New Customer Details
+  assignee?: string; // İşi Yapan Usta
+  
+  // Customer Details (Kişi Bilgileri)
   date?: string;
   address?: string;
   phone?: string;
@@ -30,10 +31,6 @@ export interface Task {
   // Service Info (Servis Bilgileri)
   serviceSerialNumber?: string;
   serviceNote?: string;
-
-  createdBy?: string;
-  lastUpdatedBy?: string;
-  createdAt?: any;
 }
 
 export interface AudioConfig {

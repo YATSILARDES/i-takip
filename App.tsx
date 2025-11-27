@@ -183,8 +183,16 @@ export default function App() {
           date: taskData.date || new Date().toISOString(),
           address: taskData.address || '',
           phone: taskData.phone || '',
+
+          // New Fields
+          generalNote: taskData.generalNote || '',
           teamNote: taskData.teamNote || '',
           isCheckVerified: taskData.isCheckVerified || false,
+          gasOpeningDate: taskData.gasOpeningDate || '',
+          gasNote: taskData.gasNote || '',
+          serviceSerialNumber: taskData.serviceSerialNumber || '',
+          serviceNote: taskData.serviceNote || '',
+
           createdBy: user?.email,
           createdAt: serverTimestamp()
         });
@@ -420,7 +428,7 @@ export default function App() {
             <Layout className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-lg tracking-tight">İş Akış Yöneticisi</h1>
+            <h1 className="font-bold text-lg tracking-tight">ONAY MÜHENDİSLİK İŞ TAKİBİ</h1>
             <p className="text-xs text-slate-400">Gemini 2.5 Live Destekli</p>
           </div>
         </div>

@@ -1,7 +1,7 @@
 {
   "name": "workflow-ai-voice-assistant",
   "private": true,
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
@@ -16,6 +16,7 @@
     "electron-log": "^5.4.3",
     "electron-updater": "^6.6.2",
     "firebase": "^11.0.2",
+    "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.554.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
