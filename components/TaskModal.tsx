@@ -124,8 +124,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
       type="button"
       onClick={() => setActiveTab(id)}
       className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors border-l-4 ${activeTab === id
-          ? 'bg-slate-800 border-blue-500 text-blue-400'
-          : 'border-transparent text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+        ? 'bg-slate-800 border-blue-500 text-blue-400'
+        : 'border-transparent text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
         }`}
     >
       {icon}
@@ -194,11 +194,11 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
             </div>
 
             {/* Mobile Tab Bar (Visible only on small screens) */}
-            <div className="md:hidden flex overflow-x-auto bg-slate-900 border-b border-slate-700">
-              <button onClick={() => setActiveTab('personal')} className={`px-4 py-3 whitespace-nowrap ${activeTab === 'personal' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-slate-400'}`}>Kişi</button>
-              <button onClick={() => setActiveTab('gas')} className={`px-4 py-3 whitespace-nowrap ${activeTab === 'gas' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-slate-400'}`}>Gaz</button>
-              <button onClick={() => setActiveTab('service')} className={`px-4 py-3 whitespace-nowrap ${activeTab === 'service' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-slate-400'}`}>Servis</button>
-              <button onClick={() => setActiveTab('control')} className={`px-4 py-3 whitespace-nowrap ${activeTab === 'control' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-slate-400'}`}>Kontrol</button>
+            <div className="md:hidden grid grid-cols-2 gap-1 p-2 bg-slate-900 border-b border-slate-700">
+              <button onClick={() => setActiveTab('personal')} className={`px-2 py-2 text-sm rounded-lg transition-colors ${activeTab === 'personal' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Kişi Bilgileri</button>
+              <button onClick={() => setActiveTab('gas')} className={`px-2 py-2 text-sm rounded-lg transition-colors ${activeTab === 'gas' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Gaz Açım</button>
+              <button onClick={() => setActiveTab('service')} className={`px-2 py-2 text-sm rounded-lg transition-colors ${activeTab === 'service' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Servis</button>
+              <button onClick={() => setActiveTab('control')} className={`px-2 py-2 text-sm rounded-lg transition-colors ${activeTab === 'control' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Kontrol</button>
             </div>
 
             {/* Right Content */}
