@@ -145,39 +145,72 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div className="bg-slate-900 border border-slate-700 w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden flex flex-col h-[90vh]">
           {/* Header */}
-          <div className="px-6 py-4 border-b border-slate-700 flex items-center justify-between bg-slate-800 gap-4">
-            <div className="flex items-center gap-4 flex-1">
-              <h2 className="text-xl font-semibold text-white flex items-center gap-2 whitespace-nowrap">
-                {isEdit ? `Müşteri Düzenle (#${task.orderNumber})` : `Yeni Müşteri (#${nextOrderNumber})`}
-              </h2>
+          <div className="px-6 py-4 border-b border-slate-700 bg-slate-800">
+            {/* Desktop Header */}
+            <div className="hidden md:flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4 flex-1">
+                <h2 className="text-xl font-semibold text-white flex items-center gap-2 whitespace-nowrap">
+                  {isEdit ? `Müşteri Düzenle (#${task.orderNumber})` : `Yeni Müşteri (#${nextOrderNumber})`}
+                </h2>
 
-              {/* Global Status Selector */}
-              <div className="flex-1 max-w-xs">
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
-                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
-                >
-                  {Object.entries(StatusLabels).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
-                  ))}
-                </select>
+                {/* Desktop Status Selector */}
+                <div className="flex-1 max-w-xs">
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
+                    className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
+                  >
+                    {Object.entries(StatusLabels).map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {isEdit && (
+                  <button
+                    onClick={handleShare}
+                    className="text-slate-400 hover:text-blue-400 p-2 rounded-lg hover:bg-slate-700 transition-all"
+                    title="Bilgileri Paylaş"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                )}
+                <button onClick={onClose} className="text-slate-400 hover:text-white p-2 transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              {isEdit && (
-                <button
-                  onClick={handleShare}
-                  className="text-slate-400 hover:text-blue-400 p-2 rounded-lg hover:bg-slate-700 transition-all"
-                  title="Bilgileri Paylaş"
+            {/* Mobile Header */}
+            <div className="md:hidden flex items-center justify-between gap-3">
+              <div className="flex-1">
+                <select
+                  value={activeTab}
+                  onChange={(e) => setActiveTab(e.target.value as TabType)}
+                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-base text-white focus:ring-2 focus:ring-blue-500 outline-none font-medium"
                 >
-                  <Share2 className="w-5 h-5" />
+                  <option value="personal">👤 Kişi Bilgileri</option>
+                  <option value="gas">🔥 Gaz Açım</option>
+                  <option value="service">🔧 Servis</option>
+                  <option value="control">📋 Kontrol</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1">
+                {isEdit && (
+                  <button
+                    onClick={handleShare}
+                    className="text-slate-400 hover:text-blue-400 p-2 rounded-lg hover:bg-slate-700 transition-all"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                )}
+                <button onClick={onClose} className="text-slate-400 hover:text-white p-2 transition-colors">
+                  <X className="w-6 h-6" />
                 </button>
-              )}
-              <button onClick={onClose} className="text-slate-400 hover:text-white p-2 transition-colors">
-                <X className="w-6 h-6" />
-              </button>
+              </div>
             </div>
           </div>
 
@@ -193,13 +226,6 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
               {renderSidebarItem('control', 'Kontrol Elemanı', <ClipboardCheck className="w-4 h-4" />)}
             </div>
 
-            {/* Mobile Tab Bar (Visible only on small screens) */}
-            <div className="md:hidden grid grid-cols-2 gap-1 p-2 bg-slate-900 border-b border-slate-700">
-              <button onClick={() => setActiveTab('personal')} className={`px-2 py-2 text-sm rounded-lg transition-colors ${activeTab === 'personal' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Kişi Bilgileri</button>
-              <button onClick={() => setActiveTab('gas')} className={`px-2 py-2 text-sm rounded-lg transition-colors ${activeTab === 'gas' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Gaz Açım</button>
-              <button onClick={() => setActiveTab('service')} className={`px-2 py-2 text-sm rounded-lg transition-colors ${activeTab === 'service' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Servis</button>
-              <button onClick={() => setActiveTab('control')} className={`px-2 py-2 text-sm rounded-lg transition-colors ${activeTab === 'control' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Kontrol</button>
-            </div>
 
             {/* Right Content */}
             <div className="flex-1 bg-slate-800/50 flex flex-col overflow-hidden">
@@ -357,7 +383,21 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-slate-700 bg-slate-800 flex justify-between items-center gap-3">
+          <div className="px-6 py-4 border-t border-slate-700 bg-slate-800 flex flex-col md:flex-row justify-between items-center gap-3">
+
+            {/* Mobile Status Selector */}
+            <div className="w-full md:hidden mb-2">
+              <label className="text-xs text-slate-400 mb-1 block">Durum</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
+                className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                {Object.entries(StatusLabels).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            </div>
 
             {/* Delete Button (Only for Edit Mode) */}
             <div className="flex-1">
