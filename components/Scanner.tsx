@@ -21,7 +21,8 @@ const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
                     Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION,
                     Html5QrcodeSupportedFormats.EAN_13,
                     Html5QrcodeSupportedFormats.CODE_128,
-                    Html5QrcodeSupportedFormats.CODE_39
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.DATA_MATRIX
                 ];
 
                 const html5QrCode = new Html5Qrcode("reader", { formatsToSupport: formatsToSupport, verbose: false });
