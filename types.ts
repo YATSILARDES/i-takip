@@ -21,7 +21,7 @@ export interface Task {
 
   // Check Info (Kontrol Elemanı Bilgileri)
   teamNote?: string; // Kontrol Ekibi Notu
-  isCheckVerified?: boolean; // Kontrolü Yapıldı Onayı
+  checkStatus?: 'missing' | 'clean'; // Kontrol Durumu (Eksik Var / Eksik Yok)
 
   // Gas Opening Info (Gaz Açım Bilgileri)
   gasOpeningDate?: string;

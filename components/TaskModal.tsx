@@ -25,7 +25,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
     phone: '',
     generalNote: '',
     teamNote: '',
-    isCheckVerified: false,
+    checkStatus: undefined,
     gasOpeningDate: '',
     gasNote: '',
     serviceSerialNumber: '',
@@ -52,7 +52,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
         phone: '',
         generalNote: '',
         teamNote: '',
-        isCheckVerified: false,
+        checkStatus: undefined,
         orderNumber: nextOrderNumber,
         gasOpeningDate: '',
         gasNote: '',
@@ -111,13 +111,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
 
   const isEdit = !!task;
 
-  // Visual logic for Check Verified color
-  const getCheckColorClass = () => {
-    if (formData.isCheckVerified) {
-      return (formData.teamNote && formData.teamNote.trim().length > 0) ? 'text-orange-500 border-orange-500 bg-orange-500' : 'text-emerald-500 border-emerald-500 bg-emerald-500';
-    }
-    return 'border-slate-500 text-transparent';
-  };
+
 
   const renderSidebarItem = (id: TabType, label: string, icon: React.ReactNode) => (
     <button
@@ -346,20 +340,29 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                       <ClipboardCheck className="w-5 h-5 text-emerald-400" /> Kontrol Elemanı Bilgileri
                     </div>
 
-                    <div className="p-5 bg-slate-700/30 border border-slate-700 rounded-xl flex items-center gap-4 cursor-pointer hover:bg-slate-700/50 transition-colors"
-                      onClick={() => setFormData({ ...formData, isCheckVerified: !formData.isCheckVerified })}>
-                      <div className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center transition-all ${getCheckColorClass()}`}>
-                        <CheckCircle2 className="w-5 h-5 text-white" />
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Eksik Var Butonu */}
+                      <div
+                        onClick={() => setFormData({ ...formData, checkStatus: 'missing' })}
+                        className={`p-4 rounded-xl border flex flex-col items-center gap-2 cursor-pointer transition-all ${formData.checkStatus === 'missing'
+                          ? 'bg-orange-600/20 border-orange-500 text-orange-400'
+                          : 'bg-slate-700/30 border-slate-700 text-slate-400 hover:bg-slate-700/50'
+                          }`}
+                      >
+                        <AlertTriangle className={`w-8 h-8 ${formData.checkStatus === 'missing' ? 'text-orange-500' : 'text-slate-500'}`} />
+                        <span className="font-medium">Eksik Var</span>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-base font-semibold text-slate-200">Kontrolü Yapıldı</span>
-                        <span className="text-sm text-slate-400">
-                          {formData.isCheckVerified
-                            ? (formData.teamNote && formData.teamNote.trim().length > 0)
-                              ? 'Not girildiği için kart TURUNCU görünecek.'
-                              : 'Not olmadığı için kart YEŞİL görünecek.'
-                            : 'İşlemi onaylamak için tıklayın.'}
-                        </span>
+
+                      {/* Eksik Yok Butonu */}
+                      <div
+                        onClick={() => setFormData({ ...formData, checkStatus: 'clean' })}
+                        className={`p-4 rounded-xl border flex flex-col items-center gap-2 cursor-pointer transition-all ${formData.checkStatus === 'clean'
+                          ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400'
+                          : 'bg-slate-700/30 border-slate-700 text-slate-400 hover:bg-slate-700/50'
+                          }`}
+                      >
+                        <CheckCircle2 className={`w-8 h-8 ${formData.checkStatus === 'clean' ? 'text-emerald-500' : 'text-slate-500'}`} />
+                        <span className="font-medium">Eksik Yok</span>
                       </div>
                     </div>
 

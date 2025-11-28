@@ -81,7 +81,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick }) => {
               <div className="px-3 py-2 border-b border-slate-700/30 bg-slate-800/30">
                 <div className="relative group">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
-                  <input 
+                  <input
                     type="text"
                     placeholder="Ara (İsim, No, Adres...)"
                     value={searchTerm}
@@ -94,41 +94,51 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick }) => {
               {/* Tasks Container */}
               <div className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar">
                 {filteredTasks.map(task => (
-                  <div 
-                    key={task.id} 
+                  <div
+                    key={task.id}
                     onClick={() => onTaskClick(task)}
                     className={`
                       px-3 py-3 rounded-lg border transition-all cursor-pointer group relative
-                      ${task.isCheckVerified 
-                        ? 'bg-orange-900/40 border-orange-500/50 hover:border-orange-400 shadow-orange-900/10' 
-                        : 'bg-slate-700/40 border-slate-600/30 hover:border-blue-500/30 hover:shadow-lg'
+                      ${task.checkStatus === 'missing'
+                        ? 'bg-orange-900/40 border-orange-500/50 hover:border-orange-400 shadow-orange-900/10'
+                        : task.checkStatus === 'clean'
+                          ? 'bg-emerald-900/40 border-emerald-500/50 hover:border-emerald-400 shadow-emerald-900/10'
+                          : 'bg-slate-700/40 border-slate-600/30 hover:border-blue-500/30 hover:shadow-lg'
                       }
                     `}
                   >
                     {/* Row Number Badge - Compact */}
-                    <div className={`absolute top-2 right-2 text-[10px] font-mono font-bold opacity-60 ${task.isCheckVerified ? 'text-orange-300' : 'text-slate-500'}`}>
+                    <div className={`absolute top-2 right-2 text-[10px] font-mono font-bold opacity-60 ${task.checkStatus === 'missing' ? 'text-orange-300' :
+                      task.checkStatus === 'clean' ? 'text-emerald-300' : 'text-slate-500'
+                      }`}>
                       #{task.orderNumber}
                     </div>
 
                     {/* Title */}
-                    <h4 className={`font-medium text-sm leading-snug pr-8 mb-1.5 ${task.isCheckVerified ? 'text-orange-100' : 'text-slate-200'}`}>
+                    <h4 className={`font-medium text-sm leading-snug pr-8 mb-1.5 ${task.checkStatus === 'missing' ? 'text-orange-100' :
+                      task.checkStatus === 'clean' ? 'text-emerald-100' : 'text-slate-200'
+                      }`}>
                       {task.title}
                     </h4>
-                    
+
                     {/* Address Only - Compact */}
                     {task.address && (
-                      <div className={`flex items-center gap-1.5 text-xs ${task.isCheckVerified ? 'text-orange-200/70' : 'text-slate-400'}`}>
-                         <MapPin className={`w-3 h-3 flex-shrink-0 ${task.isCheckVerified ? 'text-orange-400' : 'text-slate-500'}`} />
-                         <span className="truncate max-w-[200px]">{task.address}</span>
+                      <div className={`flex items-center gap-1.5 text-xs ${task.checkStatus === 'missing' ? 'text-orange-200/70' :
+                          task.checkStatus === 'clean' ? 'text-emerald-200/70' : 'text-slate-400'
+                        }`}>
+                        <MapPin className={`w-3 h-3 flex-shrink-0 ${task.checkStatus === 'missing' ? 'text-orange-400' :
+                            task.checkStatus === 'clean' ? 'text-emerald-400' : 'text-slate-500'
+                          }`} />
+                        <span className="truncate max-w-[200px]">{task.address}</span>
                       </div>
                     )}
                   </div>
                 ))}
-                
+
                 {filteredTasks.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-20 border-2 border-dashed border-slate-700/50 rounded-lg text-slate-500">
                     <span className="text-xs opacity-70">
-                       {searchTerm ? 'Sonuç bulunamadı' : 'İş kaydı yok'}
+                      {searchTerm ? 'Sonuç bulunamadı' : 'İş kaydı yok'}
                     </span>
                   </div>
                 )}

@@ -187,7 +187,7 @@ export default function App() {
           // New Fields
           generalNote: taskData.generalNote || '',
           teamNote: taskData.teamNote || '',
-          isCheckVerified: taskData.isCheckVerified || false,
+          checkStatus: taskData.checkStatus,
           gasOpeningDate: taskData.gasOpeningDate || '',
           gasNote: taskData.gasNote || '',
           serviceSerialNumber: taskData.serviceSerialNumber || '',
