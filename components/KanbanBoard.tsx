@@ -39,18 +39,18 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick }) => {
   };
 
   const getFilteredTasks = (status: TaskStatus) => {
-    const term = (searchTerms[status] || '').toLowerCase().trim();
+    const term = (searchTerms[status] || '').toLocaleLowerCase('tr').trim();
     const columnTasks = tasks.filter(t => t.status === status);
 
     if (!term) return columnTasks;
 
     return columnTasks.filter(task => {
       return (
-        task.title.toLowerCase().includes(term) ||
-        (task.jobDescription && task.jobDescription.toLowerCase().includes(term)) ||
+        task.title.toLocaleLowerCase('tr').includes(term) ||
+        (task.jobDescription && task.jobDescription.toLocaleLowerCase('tr').includes(term)) ||
         task.orderNumber.toString().includes(term) ||
         (task.phone && task.phone.includes(term)) ||
-        (task.address && task.address.toLowerCase().includes(term))
+        (task.address && task.address.toLocaleLowerCase('tr').includes(term))
       );
     });
   };

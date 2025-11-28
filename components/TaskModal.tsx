@@ -89,7 +89,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
   };
 
   const handleShare = async () => {
-    const shareText = `${formData.title} - ${formData.jobDescription || ''}\nTel: ${formData.phone || 'Yok'}\nAdres: ${formData.address || 'Yok'}`;
+    const shareText = `${formData.title}\nTel: ${formData.phone || 'Yok'}\nAdres: ${formData.address || 'Yok'}`;
     const shareData = {
       title: 'Müşteri Bilgileri',
       text: shareText
