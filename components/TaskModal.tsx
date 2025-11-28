@@ -12,7 +12,7 @@ interface TaskModalProps {
   nextOrderNumber: number;
 }
 
-type TabType = 'personal' | 'gas' | 'service' | 'control';
+type TabType = 'personal' | 'service' | 'control';
 
 const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete, task, nextOrderNumber }) => {
   const [activeTab, setActiveTab] = useState<TabType>('personal');
@@ -186,8 +186,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                   className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-base text-white focus:ring-2 focus:ring-blue-500 outline-none font-medium"
                 >
                   <option value="personal">👤 Kişi Bilgileri</option>
-                  <option value="gas">🔥 Gaz Açım</option>
-                  <option value="service">🔧 Servis</option>
+                  <option value="service">🔧 Servis ve Gaz Açım</option>
                   <option value="control">📋 Kontrol</option>
                 </select>
               </div>
@@ -215,8 +214,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
             <div className="w-64 bg-slate-900 border-r border-slate-700 flex flex-col py-4 hidden md:flex">
               <div className="px-4 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Bilgi Kartları</div>
               {renderSidebarItem('personal', 'Kişi Bilgileri', <User className="w-4 h-4" />)}
-              {renderSidebarItem('gas', 'Gaz Açım Bilgileri', <Flame className="w-4 h-4" />)}
-              {renderSidebarItem('service', 'Servis Bilgileri', <Wrench className="w-4 h-4" />)}
+              {renderSidebarItem('service', 'Servis ve Gaz Açım', <Wrench className="w-4 h-4" />)}
               {renderSidebarItem('control', 'Kontrol Elemanı', <ClipboardCheck className="w-4 h-4" />)}
             </div>
 
@@ -273,62 +271,83 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                   </div>
                 )}
 
-                {/* --- GAS OPENING INFO TAB --- */}
-                {activeTab === 'gas' && (
-                  <div className="space-y-6 animate-fadeIn">
-                    <div className="flex items-center gap-2 text-lg font-medium text-slate-200 border-b border-slate-700 pb-2">
-                      <Flame className="w-5 h-5 text-orange-400" /> Gaz Açım Bilgileri
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-400 flex items-center gap-2"><Calendar className="w-4 h-4" /> Gaz Açım Tarihi</label>
-                        <input type="date" value={formData.gasOpeningDate || ''} onChange={(e) => setFormData({ ...formData, gasOpeningDate: e.target.value })}
-                          className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-orange-500 outline-none" />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-400">Gaz Açım Notu</label>
-                      <textarea rows={4} value={formData.gasNote || ''} onChange={(e) => setFormData({ ...formData, gasNote: e.target.value })}
-                        className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-orange-500 outline-none" placeholder="Randevu saati, eksikler vb." />
-                    </div>
-                  </div>
-                )}
-
-                {/* --- SERVICE INFO TAB --- */}
+                {/* --- SERVICE & GAS INFO TAB --- */}
                 {activeTab === 'service' && (
                   <div className="space-y-6 animate-fadeIn">
                     <div className="flex items-center gap-2 text-lg font-medium text-slate-200 border-b border-slate-700 pb-2">
-                      <Wrench className="w-5 h-5 text-blue-400" /> Servis Bilgileri
+                      <Wrench className="w-5 h-5 text-blue-400" /> Servis ve Gaz Açım Bilgileri
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-400">Cihaz Seri Numarası / Barkod</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={formData.serviceSerialNumber || ''}
-                          onChange={(e) => setFormData({ ...formData, serviceSerialNumber: e.target.value })}
-                          className="flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                          placeholder="SN-123456789"
+                    {/* Gaz Açım Bölümü */}
+                    <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 space-y-4">
+                      <div className="flex items-center gap-2 text-orange-400 font-medium border-b border-slate-700/50 pb-2">
+                        <Flame className="w-4 h-4" /> Gaz Açım Detayları
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-slate-400 flex items-center gap-2">
+                            <Calendar className="w-4 h-4" /> Gaz Açım Tarihi
+                          </label>
+                          <input
+                            type="date"
+                            value={formData.gasOpeningDate || ''}
+                            onChange={(e) => setFormData({ ...formData, gasOpeningDate: e.target.value })}
+                            className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-orange-500 outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-400">Gaz Açım Notu</label>
+                        <textarea
+                          rows={2}
+                          value={formData.gasNote || ''}
+                          onChange={(e) => setFormData({ ...formData, gasNote: e.target.value })}
+                          className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-orange-500 outline-none"
+                          placeholder="Randevu saati, eksikler vb."
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowScanner(true)}
-                          className="bg-slate-700 hover:bg-slate-600 text-blue-400 px-3 py-2 rounded-lg transition-colors flex items-center gap-2 border border-slate-600"
-                          title="Barkod Tara"
-                        >
-                          <ScanBarcode className="w-5 h-5" />
-                          <span className="hidden sm:inline text-sm">Barkod Oku</span>
-                        </button>
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-400">Servis Notu</label>
-                      <textarea rows={4} value={formData.serviceNote || ''} onChange={(e) => setFormData({ ...formData, serviceNote: e.target.value })}
-                        className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Yönlendirme notları, garanti durumu vb." />
+                    {/* Servis Bölümü */}
+                    <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 space-y-4">
+                      <div className="flex items-center gap-2 text-blue-400 font-medium border-b border-slate-700/50 pb-2">
+                        <Wrench className="w-4 h-4" /> Servis Detayları
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-400">Cihaz Seri Numarası / Barkod</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={formData.serviceSerialNumber || ''}
+                            onChange={(e) => setFormData({ ...formData, serviceSerialNumber: e.target.value })}
+                            className="flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                            placeholder="SN-123456789"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowScanner(true)}
+                            className="bg-slate-700 hover:bg-slate-600 text-blue-400 px-3 py-2 rounded-lg transition-colors flex items-center gap-2 border border-slate-600"
+                            title="Barkod Tara"
+                          >
+                            <ScanBarcode className="w-5 h-5" />
+                            <span className="hidden sm:inline text-sm">Barkod Oku</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-400">Servis Notu</label>
+                        <textarea
+                          rows={3}
+                          value={formData.serviceNote || ''}
+                          onChange={(e) => setFormData({ ...formData, serviceNote: e.target.value })}
+                          className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                          placeholder="Yönlendirme notları, garanti durumu vb."
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
