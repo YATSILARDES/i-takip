@@ -30,8 +30,9 @@ const Scanner: React.FC<ScannerProps> = ({ onScanSuccess, onClose }) => {
                 await html5QrCode.start(
                     { facingMode: "environment" },
                     {
-                        fps: 10,
-                        qrbox: { width: 250, height: 250 }
+                        fps: 20,
+                        qrbox: { width: 280, height: 280 },
+                        aspectRatio: 1.0
                     },
                     (decodedText) => {
                         // Success callback

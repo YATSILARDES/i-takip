@@ -25,7 +25,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
     phone: '',
     generalNote: '',
     teamNote: '',
-    checkStatus: undefined,
+    checkStatus: null,
     gasOpeningDate: '',
     gasNote: '',
     serviceSerialNumber: '',
@@ -52,7 +52,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
         phone: '',
         generalNote: '',
         teamNote: '',
-        checkStatus: undefined,
+        checkStatus: null,
         orderNumber: nextOrderNumber,
         gasOpeningDate: '',
         gasNote: '',
@@ -343,7 +343,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                     <div className="grid grid-cols-2 gap-4">
                       {/* Eksik Var Butonu */}
                       <div
-                        onClick={() => setFormData({ ...formData, checkStatus: formData.checkStatus === 'missing' ? undefined : 'missing' })}
+                        onClick={() => setFormData({ ...formData, checkStatus: formData.checkStatus === 'missing' ? null : 'missing' })}
                         className={`p-4 rounded-xl border flex flex-col items-center gap-2 cursor-pointer transition-all ${formData.checkStatus === 'missing'
                           ? 'bg-orange-600/20 border-orange-500 text-orange-400'
                           : 'bg-slate-700/30 border-slate-700 text-slate-400 hover:bg-slate-700/50'
@@ -355,7 +355,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
 
                       {/* Eksik Yok Butonu */}
                       <div
-                        onClick={() => setFormData({ ...formData, checkStatus: formData.checkStatus === 'clean' ? undefined : 'clean' })}
+                        onClick={() => setFormData({ ...formData, checkStatus: formData.checkStatus === 'clean' ? null : 'clean' })}
                         className={`p-4 rounded-xl border flex flex-col items-center gap-2 cursor-pointer transition-all ${formData.checkStatus === 'clean'
                           ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400'
                           : 'bg-slate-700/30 border-slate-700 text-slate-400 hover:bg-slate-700/50'

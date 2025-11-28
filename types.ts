@@ -21,7 +21,7 @@ export interface Task {
 
   // Check Info (Kontrol Elemanı Bilgileri)
   teamNote?: string; // Kontrol Ekibi Notu
-  checkStatus?: 'missing' | 'clean'; // Kontrol Durumu (Eksik Var / Eksik Yok)
+  checkStatus?: 'missing' | 'clean' | null; // Kontrol Durumu (Eksik Var / Eksik Yok)
 
   // Gas Opening Info (Gaz Açım Bilgileri)
   gasOpeningDate?: string;
