@@ -178,6 +178,7 @@ export default function App() {
         await addDoc(collection(db, 'tasks'), {
           orderNumber: nextOrderNumber,
           title: taskData.title || 'Yeni Müşteri',
+          jobDescription: taskData.jobDescription || '',
           status: taskData.status || TaskStatus.TO_CHECK,
           assignee: taskData.assignee || '',
           date: taskData.date || new Date().toISOString(),
@@ -533,6 +534,7 @@ export default function App() {
         onDelete={handleDeleteTask}
         task={selectedTask}
         nextOrderNumber={nextOrderNumber}
+        isAdmin={user && ADMIN_EMAILS.includes(user.email || '')}
       />
     </div>
   );

@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { auth } from '../src/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { Layout, Lock, Mail, UserPlus, LogIn } from 'lucide-react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { Layout, Lock, Mail, LogIn } from 'lucide-react';
 
 export default function Login() {
-    const [isRegistering, setIsRegistering] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
@@ -13,11 +12,7 @@ export default function Login() {
         e.preventDefault();
         setError(null);
         try {
-            if (isRegistering) {
-                await createUserWithEmailAndPassword(auth, email, password);
-            } else {
-                await signInWithEmailAndPassword(auth, email, password);
-            }
+            await signInWithEmailAndPassword(auth, email, password);
         } catch (err: any) {
             setError(err.message);
         }
@@ -32,7 +27,7 @@ export default function Login() {
                     </div>
                     <h1 className="text-2xl font-bold text-white">İş Akış Yöneticisi</h1>
                     <p className="text-slate-400 mt-2">
-                        {isRegistering ? 'Yeni Hesap Oluştur' : 'Hesabınıza Giriş Yapın'}
+                        Hesabınıza Giriş Yapın
                     </p>
                 </div>
 
@@ -77,30 +72,11 @@ export default function Login() {
                         type="submit"
                         className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-lg transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
                     >
-                        {isRegistering ? (
-                            <>
-                                <UserPlus className="w-5 h-5" />
-                                Kayıt Ol
-                            </>
-                        ) : (
-                            <>
-                                <LogIn className="w-5 h-5" />
-                                Giriş Yap
-                            </>
-                        )}
+                        <LogIn className="w-5 h-5" />
+                        Giriş Yap
                     </button>
                 </form>
 
-                <div className="mt-6 text-center">
-                    <button
-                        onClick={() => setIsRegistering(!isRegistering)}
-                        className="text-slate-400 hover:text-white text-sm transition-colors"
-                    >
-                        {isRegistering
-                            ? 'Zaten hesabınız var mı? Giriş yapın'
-                            : 'Hesabınız yok mu? Kayıt olun'}
-                    </button>
-                </div>
             </div>
         </div>
     );

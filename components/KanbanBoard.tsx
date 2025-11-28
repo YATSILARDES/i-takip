@@ -47,6 +47,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick }) => {
     return columnTasks.filter(task => {
       return (
         task.title.toLowerCase().includes(term) ||
+        (task.jobDescription && task.jobDescription.toLowerCase().includes(term)) ||
         task.orderNumber.toString().includes(term) ||
         (task.phone && task.phone.includes(term)) ||
         (task.address && task.address.toLowerCase().includes(term))
@@ -119,15 +120,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick }) => {
                       task.checkStatus === 'clean' ? 'text-emerald-100' : 'text-slate-200'
                       }`}>
                       {task.title}
+                      {task.jobDescription && <span className="ml-2 text-xs font-normal opacity-60 italic">({task.jobDescription})</span>}
                     </h4>
 
                     {/* Address Only - Compact */}
                     {task.address && (
                       <div className={`flex items-center gap-1.5 text-xs ${task.checkStatus === 'missing' ? 'text-orange-200/70' :
-                          task.checkStatus === 'clean' ? 'text-emerald-200/70' : 'text-slate-400'
+                        task.checkStatus === 'clean' ? 'text-emerald-200/70' : 'text-slate-400'
                         }`}>
                         <MapPin className={`w-3 h-3 flex-shrink-0 ${task.checkStatus === 'missing' ? 'text-orange-400' :
-                            task.checkStatus === 'clean' ? 'text-emerald-400' : 'text-slate-500'
+                          task.checkStatus === 'clean' ? 'text-emerald-400' : 'text-slate-500'
                           }`} />
                         <span className="truncate max-w-[200px]">{task.address}</span>
                       </div>

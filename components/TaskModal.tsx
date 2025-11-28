@@ -10,14 +10,16 @@ interface TaskModalProps {
   onDelete?: (taskId: string) => void;
   task?: Task; // If provided, we are editing
   nextOrderNumber: number;
+  isAdmin?: boolean; // Yönetici yetkisi
 }
 
 type TabType = 'personal' | 'service' | 'control';
 
-const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete, task, nextOrderNumber }) => {
+const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete, task, nextOrderNumber, isAdmin = false }) => {
   const [activeTab, setActiveTab] = useState<TabType>('personal');
   const [formData, setFormData] = useState<Partial<Task>>({
     title: '',
+    jobDescription: '',
     status: TaskStatus.TO_CHECK,
     assignee: '',
     date: '',
@@ -45,6 +47,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
       // Reset for new task
       setFormData({
         title: '',
+        jobDescription: '',
         status: TaskStatus.TO_CHECK,
         assignee: '',
         date: new Date().toISOString().split('T')[0], // Default today
@@ -86,7 +89,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
   };
 
   const handleShare = async () => {
-    const shareText = `${formData.title}\nTel: ${formData.phone || 'Yok'}\nAdres: ${formData.address || 'Yok'}`;
+    const shareText = `${formData.title} - ${formData.jobDescription || ''}\nTel: ${formData.phone || 'Yok'}\nAdres: ${formData.address || 'Yok'}`;
     const shareData = {
       title: 'Müşteri Bilgileri',
       text: shareText
@@ -232,9 +235,15 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-400">Adı Soyadı / İş Tanımı</label>
+                        <label className="text-sm font-medium text-slate-400">Adı Soyadı</label>
                         <input required type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                          className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                          className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Örn: Ahmet Yılmaz" />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-400">İşin Tanımı</label>
+                        <input type="text" value={formData.jobDescription || ''} onChange={(e) => setFormData({ ...formData, jobDescription: e.target.value })}
+                          className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Örn: Mutfak Dolabı, Vestiyer..." />
                       </div>
 
                       <div className="space-y-2">
@@ -421,9 +430,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
               </select>
             </div>
 
-            {/* Delete Button (Only for Edit Mode) */}
+            {/* Delete Button (Only for Edit Mode and Admin) */}
             <div className="flex-1">
-              {isEdit && onDelete && (
+              {isEdit && onDelete && isAdmin && (
                 isDeleting ? (
                   <div className="flex items-center gap-3 animate-fadeIn">
                     <span className="text-sm text-red-400 font-medium flex items-center gap-1">

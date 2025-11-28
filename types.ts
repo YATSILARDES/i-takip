@@ -10,6 +10,7 @@ export interface Task {
   id: string;
   orderNumber: number; // Sıra Numarası
   title: string;
+  jobDescription?: string; // İşin Tanımı (Örn: Mutfak Dolabı)
   description?: string;
   status: TaskStatus;
   assignee?: string;
