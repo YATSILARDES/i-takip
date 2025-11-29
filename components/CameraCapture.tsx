@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { X, RefreshCw, Check } from 'lucide-react';
 
 interface CameraCaptureProps {
-    onCapture: (file: File) => void;
+    onCapture: (base64: string) => void;
     onClose: () => void;
 }
 
@@ -103,17 +103,12 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
 
         try {
             setIsProcessing(true);
-
-            // Base64 -> File
-            const res = await fetch(capturedImage);
-            const blob = await res.blob();
-            const file = new File([blob], "serial-crop.jpg", { type: "image/jpeg" });
-
-            onCapture(file);
+            // Direkt Base64 verisini gönderiyoruz
+            onCapture(capturedImage);
             onClose();
         } catch (error) {
             console.error("İşlem hatası:", error);
-            alert("Fotoğraf işlenirken hata oluştu: " + (error instanceof Error ? error.message : "Bilinmeyen hata"));
+            alert("Fotoğraf işlenirken hata oluştu.");
         } finally {
             setIsProcessing(false);
         }

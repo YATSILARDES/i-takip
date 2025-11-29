@@ -4,7 +4,7 @@ import { X, Save, Calendar, MapPin, Phone, FileText, User, Trash2, AlertTriangle
 import Scanner from './Scanner';
 import CameraCapture from './CameraCapture';
 import { storage } from '../src/firebase';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadString, getDownloadURL, deleteObject, uploadBytes } from 'firebase/storage';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -122,29 +122,31 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
     setShowScanner(false);
   };
 
-  const handlePhotoCapture = async (file: File) => {
+  const handlePhotoCapture = async (base64Data: string) => {
     try {
       setIsUploading(true);
 
-      // 30 Saniye Zaman Aşımı Kontrolü
+      // 60 Saniye Zaman Aşımı Kontrolü (Süreyi artırdık)
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Yükleme zaman aşımına uğradı (30sn). İnternet bağlantınızı kontrol edin.")), 30000);
+        setTimeout(() => reject(new Error("Yükleme zaman aşımına uğradı (60sn). İnternet bağlantınızı kontrol edin.")), 60000);
       });
 
       // Dosya ismi: tasks/{taskId veya timestamp}/serial.jpg
       const folderId = task?.id || `new_${Date.now()}`;
       const storageRef = ref(storage, `tasks/${folderId}/serial_${Date.now()}.jpg`);
 
-      // Upload işlemi ile Timeout'u yarıştır
-      const uploadPromise = uploadBytes(storageRef, file);
+      // Upload işlemi (Base64 String olarak)
+      const uploadPromise = uploadString(storageRef, base64Data, 'data_url');
 
-      const snapshot = await Promise.race([uploadPromise, timeoutPromise]) as any; // Type casting for simplicity
+      const snapshot = await Promise.race([uploadPromise, timeoutPromise]) as any;
       const downloadURL = await getDownloadURL(snapshot.ref);
 
       setFormData(prev => ({ ...prev, serialNumberImage: downloadURL }));
     } catch (error) {
       console.error("Upload failed:", error);
-      alert("Fotoğraf yüklenemedi: " + (error instanceof Error ? error.message : "Bilinmeyen hata"));
+      const errorCode = (error as any).code;
+      const errorMessage = (error as any).message;
+      alert(`Fotoğraf yüklenemedi.\nHata Kodu: ${errorCode || 'Bilinmiyor'}\nDetay: ${errorMessage}`);
     } finally {
       setIsUploading(false);
     }
