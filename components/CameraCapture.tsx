@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { X, RefreshCw, Check, Camera } from 'lucide-react';
+import { X, RefreshCw, Check } from 'lucide-react';
 
 interface CameraCaptureProps {
     onCapture: (file: File) => void;
@@ -10,7 +10,6 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const overlayRef = useRef<HTMLDivElement>(null);
-    const [isStreaming, setIsStreaming] = useState(false);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -25,7 +24,6 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
             });
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
-                setIsStreaming(true);
             }
         } catch (err) {
             console.error("Kamera açılamadı:", err);
@@ -38,7 +36,6 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
             const stream = videoRef.current.srcObject as MediaStream;
             stream.getTracks().forEach(track => track.stop());
             videoRef.current.srcObject = null;
-            setIsStreaming(false);
         }
     }, []);
 
@@ -77,7 +74,6 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
                 const overlayTop = overlayRect.top - videoRect.top;
 
                 // 5. Kırpılacak Alanın Sensör Üzerindeki Koordinatları
-                // Oran orantı: (OverlayBoyutu / EkranBoyutu) * GörünenSensörBoyutu
                 const cropX = (overlayLeft / screenWidth) * visibleWidthOnSensor + (videoWidth - visibleWidthOnSensor) / 2;
                 const cropY = (overlayTop / screenHeight) * visibleHeightOnSensor + (videoHeight - visibleHeightOnSensor) / 2;
                 const cropWidth = (overlayRect.width / screenWidth) * visibleWidthOnSensor;
@@ -94,8 +90,8 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
                     0, 0, cropWidth, cropHeight          // Hedef (Canvas)
                 );
 
-                // 8. Base64'e Çevir (Kaliteyi yüksek tutuyoruz çünkü alan küçük)
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                // 8. Base64 olarak al (Kalite 0.7)
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
                 setCapturedImage(dataUrl);
                 stopCamera();
             }
@@ -113,12 +109,11 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
             const blob = await res.blob();
             const file = new File([blob], "serial-crop.jpg", { type: "image/jpeg" });
 
-            // Sıkıştırma yapmadan direkt gönderiyoruz (zaten kırpıldığı için boyutu küçük olacaktır)
             onCapture(file);
             onClose();
         } catch (error) {
             console.error("İşlem hatası:", error);
-            alert("Fotoğraf işlenirken hata oluştu.");
+            alert("Fotoğraf işlenirken hata oluştu: " + (error instanceof Error ? error.message : "Bilinmeyen hata"));
         } finally {
             setIsProcessing(false);
         }

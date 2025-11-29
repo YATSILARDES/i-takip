@@ -125,18 +125,26 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
   const handlePhotoCapture = async (file: File) => {
     try {
       setIsUploading(true);
+
+      // 30 Saniye Zaman Aşımı Kontrolü
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Yükleme zaman aşımına uğradı (30sn). İnternet bağlantınızı kontrol edin.")), 30000);
+      });
+
       // Dosya ismi: tasks/{taskId veya timestamp}/serial.jpg
-      // Yeni task ise ID henüz yok, timestamp kullanalım. Edit ise task.id
       const folderId = task?.id || `new_${Date.now()}`;
       const storageRef = ref(storage, `tasks/${folderId}/serial_${Date.now()}.jpg`);
 
-      const snapshot = await uploadBytes(storageRef, file);
+      // Upload işlemi ile Timeout'u yarıştır
+      const uploadPromise = uploadBytes(storageRef, file);
+
+      const snapshot = await Promise.race([uploadPromise, timeoutPromise]) as any; // Type casting for simplicity
       const downloadURL = await getDownloadURL(snapshot.ref);
 
       setFormData(prev => ({ ...prev, serialNumberImage: downloadURL }));
     } catch (error) {
       console.error("Upload failed:", error);
-      alert("Fotoğraf yüklenemedi.");
+      alert("Fotoğraf yüklenemedi: " + (error instanceof Error ? error.message : "Bilinmeyen hata"));
     } finally {
       setIsUploading(false);
     }
