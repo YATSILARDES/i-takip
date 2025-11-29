@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Task, TaskStatus, StatusLabels } from '../types';
-import { X, Save, Calendar, MapPin, Phone, FileText, User, Trash2, AlertTriangle, CheckCircle2, PhoneCall, Share2, Flame, Wrench, ClipboardCheck, ScanBarcode } from 'lucide-react';
+import { X, Save, Calendar, MapPin, Phone, FileText, User, Trash2, AlertTriangle, CheckCircle2, PhoneCall, Share2, Flame, Wrench, ClipboardCheck, ScanBarcode, Camera, Image as ImageIcon, Loader2 } from 'lucide-react';
 import Scanner from './Scanner';
+import CameraCapture from './CameraCapture';
+import { storage } from '../src/firebase';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -31,16 +34,22 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
     gasOpeningDate: '',
     gasNote: '',
     serviceSerialNumber: '',
+    serialNumberImage: '',
     serviceNote: ''
   });
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [showImagePreview, setShowImagePreview] = useState(false);
 
   useEffect(() => {
     setIsDeleting(false); // Reset delete state on open/change
     setActiveTab('personal'); // Reset tab
     setShowScanner(false);
+    setShowCamera(false);
+    setShowImagePreview(false);
     if (task) {
       setFormData({ ...task });
     } else {
@@ -60,6 +69,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
         gasOpeningDate: '',
         gasNote: '',
         serviceSerialNumber: '',
+        serialNumberImage: '',
         serviceNote: ''
       });
     }
@@ -112,9 +122,47 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
     setShowScanner(false);
   };
 
+  const handlePhotoCapture = async (file: File) => {
+    try {
+      setIsUploading(true);
+      // Dosya ismi: tasks/{taskId veya timestamp}/serial.jpg
+      // Yeni task ise ID henüz yok, timestamp kullanalım. Edit ise task.id
+      const folderId = task?.id || `new_${Date.now()}`;
+      const storageRef = ref(storage, `tasks/${folderId}/serial_${Date.now()}.jpg`);
+
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      setFormData(prev => ({ ...prev, serialNumberImage: downloadURL }));
+    } catch (error) {
+      console.error("Upload failed:", error);
+      alert("Fotoğraf yüklenemedi.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeleteImage = async () => {
+    if (!formData.serialNumberImage) return;
+
+    if (!confirm("Fotoğrafı silmek istediğinize emin misiniz?")) return;
+
+    try {
+      // URL'den ref oluşturmak biraz karmaşık olabilir, basitçe URL'yi siliyoruz.
+      // Gerçek silme işlemi için refFromURL kullanılabilir veya sadece veritabanından linki koparırız.
+      // Storage'dan silmek en temizi ama şimdilik sadece linki kaldıralım.
+      // Eğer storage'dan da silmek istersek:
+      // const imageRef = ref(storage, formData.serialNumberImage);
+      // await deleteObject(imageRef);
+
+      setFormData(prev => ({ ...prev, serialNumberImage: '' }));
+    } catch (error) {
+      console.error("Delete failed:", error);
+      alert("Fotoğraf silinemedi.");
+    }
+  };
+
   const isEdit = !!task;
-
-
 
   const renderSidebarItem = (id: TabType, label: string, icon: React.ReactNode) => (
     <button
@@ -137,6 +185,22 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
           onScanSuccess={handleScanSuccess}
           onClose={() => setShowScanner(false)}
         />
+      )}
+
+      {showCamera && (
+        <CameraCapture
+          onCapture={handlePhotoCapture}
+          onClose={() => setShowCamera(false)}
+        />
+      )}
+
+      {showImagePreview && formData.serialNumberImage && (
+        <div className="fixed inset-0 z-[70] bg-black/90 flex items-center justify-center p-4" onClick={() => setShowImagePreview(false)}>
+          <button className="absolute top-4 right-4 text-white p-2 hover:bg-white/10 rounded-full">
+            <X className="w-8 h-8" />
+          </button>
+          <img src={formData.serialNumberImage} alt="Seri No" className="max-w-full max-h-full object-contain rounded-lg" />
+        </div>
       )}
 
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -342,8 +406,51 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                             title="Barkod Tara"
                           >
                             <ScanBarcode className="w-5 h-5" />
-                            <span className="hidden sm:inline text-sm">Barkod Oku</span>
+                            <span className="hidden sm:inline text-sm">Barkod</span>
                           </button>
+                        </div>
+                      </div>
+
+                      {/* Fotoğraf Alanı */}
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-400">Seri No Fotoğrafı</label>
+                        <div className="flex items-center gap-4">
+                          {formData.serialNumberImage ? (
+                            <div className="relative group">
+                              <img
+                                src={formData.serialNumberImage}
+                                alt="Seri No"
+                                className="w-24 h-24 object-cover rounded-lg border border-slate-600 cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => setShowImagePreview(true)}
+                              />
+                              <button
+                                type="button"
+                                onClick={handleDeleteImage}
+                                className="absolute -top-2 -right-2 bg-red-600 text-white p-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="w-24 h-24 bg-slate-700/50 border border-slate-600 border-dashed rounded-lg flex items-center justify-center text-slate-500">
+                              <ImageIcon className="w-8 h-8" />
+                            </div>
+                          )}
+
+                          <div className="flex flex-col gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setShowCamera(true)}
+                              disabled={isUploading}
+                              className="bg-slate-700 hover:bg-slate-600 text-blue-400 px-4 py-2 rounded-lg transition-colors flex items-center gap-2 border border-slate-600"
+                            >
+                              {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+                              <span>{isUploading ? 'Yükleniyor...' : 'Fotoğraf Çek'}</span>
+                            </button>
+                            <p className="text-xs text-slate-500">
+                              * Fotoğraflar otomatik sıkıştırılır.
+                            </p>
+                          </div>
                         </div>
                       </div>
 

@@ -1,7 +1,7 @@
 {
   "name": "workflow-ai-voice-assistant",
   "private": true,
-  "version": "0.0.15",
+  "version": "0.0.16",
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
+    "browser-image-compression": "^2.0.2",
     "electron-log": "^5.4.3",
     "electron-updater": "^6.6.2",
     "firebase": "^11.0.2",

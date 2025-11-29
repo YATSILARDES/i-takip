@@ -30,6 +30,7 @@ export interface Task {
 
   // Service Info (Servis Bilgileri)
   serviceSerialNumber?: string;
+  serialNumberImage?: string; // Seri No Fotoğraf URL
   serviceNote?: string;
 
   createdBy?: string;
