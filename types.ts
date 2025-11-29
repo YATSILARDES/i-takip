@@ -57,5 +57,7 @@ export const StatusLabels: Record<TaskStatus, string> = {
 };
 
 export interface AppSettings {
-  gasNotificationEmail: string; // Gaz açıldı bildirimi gidecek e-posta
+  notifications: {
+    [key in TaskStatus]?: string; // Her durum için e-posta adresi
+  };
 }

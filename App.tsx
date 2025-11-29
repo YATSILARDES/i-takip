@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GoogleGenAI, FunctionDeclaration, Type, LiveServerMessage, Modality } from '@google/genai';
 import * as XLSX from 'xlsx';
-import { Mic, MicOff, Layout, Plus, LogOut, Settings } from 'lucide-react';
+import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X } from 'lucide-react';
 import KanbanBoard from './components/KanbanBoard';
 import Visualizer from './components/Visualizer';
 import TaskModal from './components/TaskModal';
 import SettingsModal from './components/SettingsModal';
 import Login from './components/Login';
-import { Task, TaskStatus, AppSettings } from './types';
+import { Task, TaskStatus, AppSettings, StatusLabels } from './types';
 import { createPcmBlob, base64ToArrayBuffer, pcmToAudioBuffer } from './utils/audioUtils';
 import { auth, db } from './src/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
@@ -74,7 +74,8 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | undefined>(undefined);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [appSettings, setAppSettings] = useState<AppSettings>({ gasNotificationEmail: '' });
+  const [appSettings, setAppSettings] = useState<AppSettings>({ notifications: {} });
+  const [toast, setToast] = useState<{ message: string, visible: boolean }>({ message: '', visible: false });
 
   // Settings Listener
   useEffect(() => {
@@ -88,37 +89,37 @@ export default function App() {
 
   // Notification Logic
   useEffect(() => {
-    if (!user || !appSettings.gasNotificationEmail) return;
-
-    // Sadece hedef kullanıcıysak dinleyelim
-    if (user.email !== appSettings.gasNotificationEmail) return;
+    if (!user) return;
 
     const q = query(collection(db, 'tasks'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       snapshot.docChanges().forEach((change) => {
         if (change.type === 'modified') {
           const task = change.doc.data() as Task;
-          // Eğer durum GAS_OPENED olduysa ve önceki durum farklıysa (basitçe şu anki duruma bakıyoruz, daha detaylı kontrol için previous state gerekebilir ama real-time'da bu yeterli olabilir)
-          // Ancak modified her değişiklikte tetiklenir. Sadece status değiştiğinde uyarı vermek için:
-          // Burada basit bir kontrol yapıyoruz: Eğer task.status === GAS_OPENED ise ve bu değişiklik yeni geldiyse.
-          // Daha sağlam bir yöntem: change.doc.data().status === GAS_OPENED
+          const targetEmail = appSettings.notifications?.[task.status];
 
-          if (task.status === TaskStatus.GAS_OPENED) {
-            // Bildirim Gönder
-            new Notification('Gaz Açıldı!', {
-              body: `${task.title} - ${task.address || ''}`,
-              icon: '/icon.png' // Varsa ikon yolu
+          // Eğer bu durum için bir bildirim ayarlanmışsa ve hedef bizsek
+          if (targetEmail && targetEmail === user.email) {
+            const message = `${task.title} - ${StatusLabels[task.status]} aşamasına geldi.`;
+
+            // Masaüstü Bildirimi
+            new Notification('İş Durumu Güncellendi', {
+              body: message,
+              icon: '/icon.png'
             });
 
+            // Uygulama İçi Bildirim (Toast)
+            setToast({ message, visible: true });
+            setTimeout(() => setToast({ ...toast, visible: false }), 5000);
+
             // Ses Çal
-            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'); // Basit bir bildirim sesi
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
             audio.play().catch(e => console.log('Audio play failed', e));
           }
         }
       });
     });
 
-    // Bildirim izni iste
     if (Notification.permission !== 'granted') {
       Notification.requestPermission();
     }
@@ -612,7 +613,24 @@ export default function App() {
         onClose={() => setIsSettingsOpen(false)}
         onSave={handleSaveSettings}
         initialSettings={appSettings}
+        users={ADMIN_EMAILS} // Şimdilik adminleri öner, ileride tüm kullanıcılar olabilir
       />
+
+      {/* Toast Notification */}
+      {toast.visible && (
+        <div className="fixed bottom-4 right-4 bg-slate-800 border border-blue-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 animate-slideIn z-50">
+          <div className="bg-blue-500/20 p-2 rounded-full">
+            <Bell className="w-6 h-6 text-blue-400" />
+          </div>
+          <div>
+            <h4 className="font-bold text-sm text-blue-400">Yeni Bildirim</h4>
+            <p className="text-sm text-slate-200">{toast.message}</p>
+          </div>
+          <button onClick={() => setToast({ ...toast, visible: false })} className="text-slate-500 hover:text-white ml-2">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
