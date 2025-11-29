@@ -55,3 +55,7 @@ export const StatusLabels: Record<TaskStatus, string> = {
   [TaskStatus.GAS_OPENED]: 'Gaz Açıldı',
   [TaskStatus.SERVICE_DIRECTED]: 'Servis Yönlendirildi'
 };
+
+export interface AppSettings {
+  gasNotificationEmail: string; // Gaz açıldı bildirimi gidecek e-posta
+}

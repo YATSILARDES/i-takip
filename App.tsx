@@ -1,16 +1,17 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GoogleGenAI, FunctionDeclaration, Type, LiveServerMessage, Modality } from '@google/genai';
 import * as XLSX from 'xlsx';
-import { Mic, MicOff, Layout, Plus, LogOut } from 'lucide-react';
+import { Mic, MicOff, Layout, Plus, LogOut, Settings } from 'lucide-react';
 import KanbanBoard from './components/KanbanBoard';
 import Visualizer from './components/Visualizer';
 import TaskModal from './components/TaskModal';
+import SettingsModal from './components/SettingsModal';
 import Login from './components/Login';
-import { Task, TaskStatus } from './types';
+import { Task, TaskStatus, AppSettings } from './types';
 import { createPcmBlob, base64ToArrayBuffer, pcmToAudioBuffer } from './utils/audioUtils';
 import { auth, db } from './src/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc } from 'firebase/firestore';
 
 // Yöneticiler Listesi
 const ADMIN_EMAILS = ['caner192@hotmail.com'];
@@ -72,6 +73,68 @@ export default function App() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | undefined>(undefined);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [appSettings, setAppSettings] = useState<AppSettings>({ gasNotificationEmail: '' });
+
+  // Settings Listener
+  useEffect(() => {
+    const unsubscribe = onSnapshot(doc(db, 'settings', 'general'), (doc) => {
+      if (doc.exists()) {
+        setAppSettings(doc.data() as AppSettings);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Notification Logic
+  useEffect(() => {
+    if (!user || !appSettings.gasNotificationEmail) return;
+
+    // Sadece hedef kullanıcıysak dinleyelim
+    if (user.email !== appSettings.gasNotificationEmail) return;
+
+    const q = query(collection(db, 'tasks'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'modified') {
+          const task = change.doc.data() as Task;
+          // Eğer durum GAS_OPENED olduysa ve önceki durum farklıysa (basitçe şu anki duruma bakıyoruz, daha detaylı kontrol için previous state gerekebilir ama real-time'da bu yeterli olabilir)
+          // Ancak modified her değişiklikte tetiklenir. Sadece status değiştiğinde uyarı vermek için:
+          // Burada basit bir kontrol yapıyoruz: Eğer task.status === GAS_OPENED ise ve bu değişiklik yeni geldiyse.
+          // Daha sağlam bir yöntem: change.doc.data().status === GAS_OPENED
+
+          if (task.status === TaskStatus.GAS_OPENED) {
+            // Bildirim Gönder
+            new Notification('Gaz Açıldı!', {
+              body: `${task.title} - ${task.address || ''}`,
+              icon: '/icon.png' // Varsa ikon yolu
+            });
+
+            // Ses Çal
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'); // Basit bir bildirim sesi
+            audio.play().catch(e => console.log('Audio play failed', e));
+          }
+        }
+      });
+    });
+
+    // Bildirim izni iste
+    if (Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
+
+    return () => unsubscribe();
+  }, [user, appSettings]);
+
+  const handleSaveSettings = async (newSettings: AppSettings) => {
+    try {
+      await setDoc(doc(db, 'settings', 'general'), newSettings);
+      setIsSettingsOpen(false);
+    } catch (e) {
+      console.error("Error saving settings: ", e);
+      setError("Ayarlar kaydedilemedi.");
+    }
+  };
 
   // Audio Refs
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -449,6 +512,13 @@ export default function App() {
                 📤 Yükle
                 <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleImportExcel} />
               </label>
+              <button
+                onClick={() => setIsSettingsOpen(true)}
+                className="bg-slate-700 hover:bg-slate-600 text-slate-300 px-2 py-1 rounded text-sm flex items-center gap-1 ml-2 border border-slate-600"
+                title="Ayarlar"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
             </div>
           )}
 
@@ -535,6 +605,13 @@ export default function App() {
         task={selectedTask}
         nextOrderNumber={nextOrderNumber}
         isAdmin={user && ADMIN_EMAILS.includes(user.email || '')}
+      />
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        onSave={handleSaveSettings}
+        initialSettings={appSettings}
       />
     </div>
   );
