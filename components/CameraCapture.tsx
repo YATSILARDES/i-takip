@@ -58,7 +58,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
                 // Base64 olarak al
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
                 setCapturedImage(dataUrl);
                 stopCamera(); // Fotoğraf çekince kamerayı durdur
             }
@@ -78,9 +78,10 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
 
             // Sıkıştırma Ayarları
             const options = {
-                maxSizeMB: 0.2, // 200KB altı hedef
-                maxWidthOrHeight: 1280,
-                useWebWorker: true
+                maxSizeMB: 0.1, // 100KB altı hedef
+                maxWidthOrHeight: 1024,
+                useWebWorker: true,
+                initialQuality: 0.7
             };
 
             const compressedFile = await imageCompression(file, options);
