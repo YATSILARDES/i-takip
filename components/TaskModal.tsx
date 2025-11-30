@@ -3,8 +3,6 @@ import { Task, TaskStatus, StatusLabels } from '../types';
 import { X, Save, Calendar, MapPin, Phone, FileText, User, Trash2, AlertTriangle, CheckCircle2, PhoneCall, Share2, Flame, Wrench, ClipboardCheck, ScanBarcode, Camera, Image as ImageIcon, Loader2 } from 'lucide-react';
 import Scanner from './Scanner';
 import CameraCapture from './CameraCapture';
-import { storage } from '../src/firebase';
-import { ref, uploadString, getDownloadURL, deleteObject, uploadBytes } from 'firebase/storage';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -44,12 +42,15 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
   const [isUploading, setIsUploading] = useState(false);
   const [showImagePreview, setShowImagePreview] = useState(false);
 
+
   useEffect(() => {
     setIsDeleting(false); // Reset delete state on open/change
     setActiveTab('personal'); // Reset tab
     setShowScanner(false);
     setShowCamera(false);
     setShowImagePreview(false);
+
+
     if (task) {
       setFormData({ ...task });
     } else {
@@ -125,28 +126,12 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
   const handlePhotoCapture = async (base64Data: string) => {
     try {
       setIsUploading(true);
-
-      // 60 Saniye Zaman Aşımı Kontrolü (Süreyi artırdık)
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Yükleme zaman aşımına uğradı (60sn). İnternet bağlantınızı kontrol edin.")), 60000);
-      });
-
-      // Dosya ismi: tasks/{taskId veya timestamp}/serial.jpg
-      const folderId = task?.id || `new_${Date.now()}`;
-      const storageRef = ref(storage, `tasks/${folderId}/serial_${Date.now()}.jpg`);
-
-      // Upload işlemi (Base64 String olarak)
-      const uploadPromise = uploadString(storageRef, base64Data, 'data_url');
-
-      const snapshot = await Promise.race([uploadPromise, timeoutPromise]) as any;
-      const downloadURL = await getDownloadURL(snapshot.ref);
-
-      setFormData(prev => ({ ...prev, serialNumberImage: downloadURL }));
+      // Base64 stringi direkt formData'ya kaydediyoruz
+      setFormData(prev => ({ ...prev, serialNumberImage: base64Data }));
+      alert("Fotoğraf başarıyla kaydedildi!");
     } catch (error) {
-      console.error("Upload failed:", error);
-      const errorCode = (error as any).code;
-      const errorMessage = (error as any).message;
-      alert(`Fotoğraf yüklenemedi.\nHata Kodu: ${errorCode || 'Bilinmiyor'}\nDetay: ${errorMessage}`);
+      console.error("Fotoğraf kaydedilemedi:", error);
+      alert(`Fotoğraf kaydedilemedi.\nDetay: ${(error as any).message}`);
     } finally {
       setIsUploading(false);
     }
@@ -154,23 +139,16 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
 
   const handleDeleteImage = async () => {
     if (!formData.serialNumberImage) return;
-
     if (!confirm("Fotoğrafı silmek istediğinize emin misiniz?")) return;
-
     try {
-      // URL'den ref oluşturmak biraz karmaşık olabilir, basitçe URL'yi siliyoruz.
-      // Gerçek silme işlemi için refFromURL kullanılabilir veya sadece veritabanından linki koparırız.
-      // Storage'dan silmek en temizi ama şimdilik sadece linki kaldıralım.
-      // Eğer storage'dan da silmek istersek:
-      // const imageRef = ref(storage, formData.serialNumberImage);
-      // await deleteObject(imageRef);
-
-      setFormData(prev => ({ ...prev, serialNumberImage: '' }));
+      setFormData(prev => ({ ...prev, serialNumberImage: "" }));
+      alert("Fotoğraf silindi.");
     } catch (error) {
-      console.error("Delete failed:", error);
+      console.error("Silme başarısız:", error);
       alert("Fotoğraf silinemedi.");
     }
   };
+
 
   const isEdit = !!task;
 
@@ -196,6 +174,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
           onClose={() => setShowScanner(false)}
         />
       )}
+
+
 
       {showCamera && (
         <CameraCapture
@@ -418,6 +398,49 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                             <ScanBarcode className="w-5 h-5" />
                             <span className="hidden sm:inline text-sm">Barkod</span>
                           </button>
+                        </div>
+                      </div>
+
+                      {/* Fotoğraf Alanı */}
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-400">Seri No Fotoğrafı</label>
+                        <div className="flex items-center gap-4">
+                          {formData.serialNumberImage ? (
+                            <div className="relative group">
+                              <img
+                                src={formData.serialNumberImage}
+                                alt="Seri No"
+                                className="w-24 h-24 object-cover rounded-lg border border-slate-600 cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => setShowImagePreview(true)}
+                              />
+                              <button
+                                type="button"
+                                onClick={handleDeleteImage}
+                                className="absolute -top-2 -right-2 bg-red-600 text-white p-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="w-24 h-24 bg-slate-700/50 border border-slate-600 border-dashed rounded-lg flex items-center justify-center text-slate-500">
+                              <ImageIcon className="w-8 h-8" />
+                            </div>
+                          )}
+
+                          <div className="flex flex-col gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setShowCamera(true)}
+                              disabled={isUploading}
+                              className="bg-slate-700 hover:bg-slate-600 text-blue-400 px-4 py-2 rounded-lg transition-colors flex items-center gap-2 border border-slate-600"
+                            >
+                              {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+                              <span>{isUploading ? 'Yükleniyor...' : 'Fotoğraf Çek'}</span>
+                            </button>
+                            <p className="text-xs text-slate-500">
+                              * Fotoğraflar otomatik sıkıştırılır.
+                            </p>
+                          </div>
                         </div>
                       </div>
 
