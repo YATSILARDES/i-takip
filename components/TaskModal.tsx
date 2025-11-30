@@ -444,48 +444,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSave, onDelete
                         </div>
                       </div>
 
-                      {/* Fotoğraf Alanı */}
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-400">Seri No Fotoğrafı</label>
-                        <div className="flex items-center gap-4">
-                          {formData.serialNumberImage ? (
-                            <div className="relative group">
-                              <img
-                                src={formData.serialNumberImage}
-                                alt="Seri No"
-                                className="w-24 h-24 object-cover rounded-lg border border-slate-600 cursor-pointer hover:opacity-80 transition-opacity"
-                                onClick={() => setShowImagePreview(true)}
-                              />
-                              <button
-                                type="button"
-                                onClick={handleDeleteImage}
-                                className="absolute -top-2 -right-2 bg-red-600 text-white p-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="w-24 h-24 bg-slate-700/50 border border-slate-600 border-dashed rounded-lg flex items-center justify-center text-slate-500">
-                              <ImageIcon className="w-8 h-8" />
-                            </div>
-                          )}
 
-                          <div className="flex flex-col gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setShowCamera(true)}
-                              disabled={isUploading}
-                              className="bg-slate-700 hover:bg-slate-600 text-blue-400 px-4 py-2 rounded-lg transition-colors flex items-center gap-2 border border-slate-600"
-                            >
-                              {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
-                              <span>{isUploading ? 'Yükleniyor...' : 'Fotoğraf Çek'}</span>
-                            </button>
-                            <p className="text-xs text-slate-500">
-                              * Fotoğraflar otomatik sıkıştırılır.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
 
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-400">Servis Notu</label>
