@@ -58,7 +58,5 @@ export const StatusLabels: Record<TaskStatus, string> = {
 };
 
 export interface AppSettings {
-  notifications: {
-    [key in TaskStatus]?: string; // Her durum için e-posta adresi
-  };
+  notifications: Partial<Record<TaskStatus, string[]>>; // Artık birden fazla email alabilir
 }

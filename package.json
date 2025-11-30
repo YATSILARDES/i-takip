@@ -1,7 +1,7 @@
 {
   "name": "workflow-ai-voice-assistant",
   "private": true,
-  "version": "0.0.24",
+  "version": "0.0.25",
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
@@ -25,6 +25,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.0.0",
     "concurrently": "^9.1.0",
     "cross-env": "^7.0.3",
