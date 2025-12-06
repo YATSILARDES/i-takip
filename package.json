@@ -12,6 +12,9 @@
     "electron:build": "npm run build && electron-builder"
   },
   "dependencies": {
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/core": "^7.4.4",
     "@google/genai": "^1.30.0",
     "browser-image-compression": "^2.0.2",
     "electron-log": "^5.4.3",
@@ -19,8 +22,8 @@
     "firebase": "^11.0.2",
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.554.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

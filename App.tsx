@@ -117,12 +117,16 @@ export default function App() {
             if (targetEmails.includes(user.email || '')) {
               const message = `${task.title} - ${StatusLabels[task.status]} aşamasına geldi.`;
 
-              // Masaüstü Bildirimi
-              if (Notification.permission === 'granted') {
-                new Notification('İş Durumu Güncellendi', {
-                  body: message,
-                  icon: '/icon.png'
-                });
+              // Masaüstü Bildirimi (Sadece destekleniyorsa)
+              try {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification('İş Durumu Güncellendi', {
+                    body: message,
+                    icon: '/icon.png'
+                  });
+                }
+              } catch (e) {
+                console.log('Notification API not supported');
               }
 
               // Uygulama İçi Bildirim (Toast)
@@ -130,16 +134,25 @@ export default function App() {
               setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 5000);
 
               // Ses Çal
-              const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-              audio.play().catch(e => console.log('Audio play failed', e));
+              try {
+                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                audio.play().catch(e => console.log('Audio play failed', e));
+              } catch (e) {
+                console.log('Audio API error', e);
+              }
             }
           }
         }
       });
     });
 
-    if (Notification.permission !== 'granted') {
-      Notification.requestPermission();
+    // İzin isteği (Sadece tarayıcıda ve destekleniyorsa)
+    try {
+      if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+        Notification.requestPermission();
+      }
+    } catch (e) {
+      console.log('Notification permission error', e);
     }
 
     return () => unsubscribe();
