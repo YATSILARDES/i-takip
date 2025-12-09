@@ -29,11 +29,50 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onSaveSettings
 
     // --- Excel İşlemleri ---
     const handleDownloadExcel = () => {
-        const worksheet = XLSX.utils.json_to_sheet(tasks);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Tasks");
-        XLSX.writeFile(workbook, "Is_Takip_Yedek.xlsx");
-        alert("Excel dosyası indirildi!");
+        try {
+            // Veriyi Excel için uygun formata getir
+            const excelData = tasks.map(t => {
+                // Tarih formatlama (Firestore Timestamp veya String kontrolü)
+                let formattedDate = '';
+                if (t.createdAt?.seconds) {
+                    formattedDate = new Date(t.createdAt.seconds * 1000).toLocaleString('tr-TR');
+                } else if (t.createdAt) {
+                    formattedDate = new Date(t.createdAt).toLocaleString('tr-TR');
+                }
+
+                return {
+                    'Sıra No': t.orderNumber,
+                    'Durum': StatusLabels[t.status] || t.status,
+                    'Müşteri Adı / Başlık': t.title,
+                    'İş Tanımı': t.jobDescription || '',
+                    'Adres': t.address || '',
+                    'Telefon': t.phone || '',
+                    'Atanan Personel': t.assignee || 'Atanmadı',
+                    'Oluşturulma Tarihi': formattedDate,
+                    'Randevu Tarihi': t.date || '',
+                    'Genel Not': t.generalNote || '',
+                    'Ekip Notu': t.teamNote || '',
+                    'Gaz Açım Tarihi': t.gasOpeningDate || '',
+                    'Gaz Notu': t.gasNote || '',
+                    'Servis Seri No': t.serviceSerialNumber || '',
+                    'Servis Notu': t.serviceNote || '',
+                    'Oluşturan': t.createdBy || ''
+                };
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "İş Listesi");
+
+            // Dosya ismine tarih ekle
+            const dateStr = new Date().toLocaleDateString('tr-TR').replace(/\./g, '-');
+            XLSX.writeFile(workbook, `Is_Takip_Yedek_${dateStr}.xlsx`);
+
+            alert(`Excel dosyası başarıyla indirildi: Is_Takip_Yedek_${dateStr}.xlsx`);
+        } catch (e: any) {
+            console.error("Excel indirme hatası:", e);
+            alert('İndirme sırasında hata oluştu: ' + e.message);
+        }
     };
 
     const handleUploadExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
