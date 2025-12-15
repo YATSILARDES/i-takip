@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, RefreshCw } from 'lucide-react';
-import { collection, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot } from 'firebase/firestore';
 import { db } from '../src/firebase';
 
 interface Appointment {
@@ -16,13 +16,16 @@ interface AppointmentsModalProps {
 const AppointmentsModal: React.FC<AppointmentsModalProps> = ({ isOpen, onClose }) => {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!isOpen) return;
 
-        // "randevular" koleksiyonunu dinle (Kullanıcının belirttiği isim)
-        // Eğer isim farklıysa burayı değiştirmemiz gerekebilir.
-        const q = query(collection(db, 'randevular')); // Sıralama için alan adı bilmediğimizden şimdilik düz çekiyoruz
+        setLoading(true);
+        setError(null);
+
+        // "randevular" koleksiyonunu dinle
+        const q = query(collection(db, 'randevular'));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const fetchedAppointments = snapshot.docs.map(doc => ({
@@ -31,8 +34,9 @@ const AppointmentsModal: React.FC<AppointmentsModalProps> = ({ isOpen, onClose }
             }));
             setAppointments(fetchedAppointments);
             setLoading(false);
-        }, (error) => {
-            console.error("Randevular çekilirken hata:", error);
+        }, (err) => {
+            console.error("Randevular çekilirken hata:", err);
+            setError("Veriye erişim izni yok veya bağlantı hatası. (Firebase Kurallarını kontrol edin: allow read: if true)");
             setLoading(false);
         });
 
@@ -70,11 +74,17 @@ const AppointmentsModal: React.FC<AppointmentsModalProps> = ({ isOpen, onClose }
                         <div className="flex items-center justify-center h-full text-slate-500 gap-2">
                             <RefreshCw className="w-5 h-5 animate-spin" /> Yükleniyor...
                         </div>
+                    ) : error ? (
+                        <div className="flex flex-col items-center justify-center h-full text-red-400 gap-2 p-4 text-center">
+                            <p className="font-bold">Bir hata oluştu</p>
+                            <p className="text-sm">{error}</p>
+                            <p className="text-xs text-slate-500 mt-2">Firebase Console {'>'} Firestore Database {'>'} Rules sekmesini kontrol ediniz.</p>
+                        </div>
                     ) : appointments.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-slate-500 border-2 border-dashed border-slate-800 rounded-xl">
                             <Calendar className="w-8 h-8 opacity-50 mb-2" />
                             <p>Henüz randevu verisi yok.</p>
-                            <p className="text-xs opacity-50 mt-1">n8n entegrasyonunu kontrol ediniz.</p>
+                            <p className="text-xs opacity-50 mt-1">Veritabanında 'randevular' koleksiyonu var mı?</p>
                         </div>
                     ) : (
                         <div className="grid gap-3">
@@ -83,21 +93,21 @@ const AppointmentsModal: React.FC<AppointmentsModalProps> = ({ isOpen, onClose }
                                     <div className="flex flex-col gap-1">
                                         <div className="flex justify-between items-start">
                                             <h3 className="font-semibold text-slate-200">
-                                                {/* Dinamik Alan Gösterimi - Gelen verinin yapısını bilmediğimiz için JSON döküyoruz veya tahmin ediyoruz */}
-                                                {apt.musteriAdi || apt.name || apt.title || 'İsimsiz Müşteri'}
+                                                {/* Veri Yapısı: projectName, appointmentDate, projectType */}
+                                                {apt.projectName || apt.musteriAdi || apt.title || 'İsimsiz'}
                                             </h3>
                                             <span className="text-xs font-mono text-slate-500 bg-slate-900 px-1.5 py-0.5 rounded">
-                                                {apt.tarih || apt.date || 'Tarih Yok'}
+                                                {apt.appointmentDate ? String(apt.appointmentDate) : 'Tarih Yok'}
                                             </span>
                                         </div>
 
                                         <div className="text-sm text-slate-400">
-                                            {apt.adres || apt.address || 'Adres belirtilmemiş'}
+                                            {apt.projectType && <span className="text-purple-400 mr-2 font-bold">[{apt.projectType}]</span>}
+                                            {apt.adres || apt.address || ''}
                                         </div>
 
-                                        {/* Ham Veri Gösterimi (Debug için, sonra kaldırılabilir) */}
                                         <details className="mt-2">
-                                            <summary className="text-[10px] text-slate-600 cursor-pointer hover:text-slate-400">Tüm Detaylar</summary>
+                                            <summary className="text-[10px] text-slate-600 cursor-pointer hover:text-slate-400">Veri Detayı (Debug)</summary>
                                             <pre className="text-[10px] text-slate-500 mt-1 overflow-x-auto bg-slate-950/50 p-2 rounded border border-slate-800">
                                                 {JSON.stringify(apt, null, 2)}
                                             </pre>
