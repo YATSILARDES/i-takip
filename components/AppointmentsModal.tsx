@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, RefreshCw } from 'lucide-react';
+import { X, Calendar, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { collection, query, onSnapshot } from 'firebase/firestore';
 import { db } from '../src/firebase';
 
 interface Appointment {
     id: string;
+    projectName?: string;
+    projectType?: string;
+    projectAddress?: string;
+    appointmentDate?: any; // Timestamp or Object with seconds
     [key: string]: any;
 }
 
@@ -13,10 +17,13 @@ interface AppointmentsModalProps {
     onClose: () => void;
 }
 
+const WEEK_DAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+
 const AppointmentsModal: React.FC<AppointmentsModalProps> = ({ isOpen, onClose }) => {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [currentDate, setCurrentDate] = useState(new Date());
 
     useEffect(() => {
         if (!isOpen) return;
@@ -24,7 +31,6 @@ const AppointmentsModal: React.FC<AppointmentsModalProps> = ({ isOpen, onClose }
         setLoading(true);
         setError(null);
 
-        // "randevular" koleksiyonunu dinle
         const q = query(collection(db, 'randevular'));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -36,85 +42,194 @@ const AppointmentsModal: React.FC<AppointmentsModalProps> = ({ isOpen, onClose }
             setLoading(false);
         }, (err) => {
             console.error("Randevular çekilirken hata:", err);
-            setError("Veriye erişim izni yok veya bağlantı hatası. (Firebase Kurallarını kontrol edin: allow read: if true)");
+            setError("Veriye erişim izni yok veya bağlantı hatası.");
             setLoading(false);
         });
 
         return () => unsubscribe();
     }, [isOpen]);
 
+    // Yardımcı Fonksiyon: Tarihi Parse Etme
+    const parseDate = (dateData: any): Date | null => {
+        if (!dateData) return null;
+
+        // 1. Firebase Timestamp (veya n8n JSON formatı: { seconds: ..., nanoseconds: ... })
+        if (dateData.seconds || dateData.saniyeler) {
+            const seconds = dateData.seconds || dateData.saniyeler;
+            return new Date(seconds * 1000);
+        }
+
+        // 2. String Format (ISO vb.)
+        if (typeof dateData === 'string') {
+            const parsed = new Date(dateData);
+            return isNaN(parsed.getTime()) ? null : parsed;
+        }
+
+        return null;
+    };
+
+    // Şu anki haftanın başlangıcını ve bitişini bulma
+    const getWeekRange = (date: Date) => {
+        const start = new Date(date);
+        const day = start.getDay(); // 0 (Pazar) - 6 (Cumartesi)
+        const diff = start.getDate() - day + (day === 0 ? -6 : 1); // Pazartesi'ye ayarla
+        start.setDate(diff);
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        end.setHours(23, 59, 59, 999);
+
+        const days = [];
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(start);
+            d.setDate(start.getDate() + i);
+            days.push(d);
+        }
+
+        return { start, end, days };
+    };
+
+    const { start: weekStart, end: weekEnd, days: weekDays } = getWeekRange(currentDate);
+
+    // Randevuları Günlere Dağıtma
+    const groupAppointmentsByDay = () => {
+        const groups: { [key: string]: Appointment[] } = {};
+        weekDays.forEach(d => groups[d.toDateString()] = []);
+
+        appointments.forEach(apt => {
+            const date = parseDate(apt.appointmentDate || apt.randevuTarihi);
+            if (date) {
+                // Tarih bu hafta içinde mi?
+                if (date >= weekStart && date <= weekEnd) {
+                    const dateKey = date.toDateString();
+                    if (groups[dateKey]) {
+                        groups[dateKey].push(apt);
+                    }
+                }
+            }
+        });
+        return groups;
+    };
+
+    const weeklyAppointments = groupAppointmentsByDay();
+
+    const handlePrevWeek = () => {
+        const newDate = new Date(currentDate);
+        newDate.setDate(currentDate.getDate() - 7);
+        setCurrentDate(newDate);
+    };
+
+    const handleNextWeek = () => {
+        const newDate = new Date(currentDate);
+        newDate.setDate(currentDate.getDate() + 7);
+        setCurrentDate(newDate);
+    };
+
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="bg-slate-900 border border-slate-700 w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden flex flex-col h-[80vh]">
+            <div className="bg-slate-900 border border-slate-700 w-full max-w-6xl rounded-xl shadow-2xl overflow-hidden flex flex-col h-[90vh]">
 
                 {/* Header */}
                 <div className="p-4 border-b border-slate-700 bg-slate-800 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                         <div className="bg-purple-600/20 p-2 rounded-lg">
                             <Calendar className="w-5 h-5 text-purple-400" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">Dipos Randevuları</h2>
-                            <p className="text-xs text-slate-400">Otomatik güncellenen randevu listesi</p>
+                            <h2 className="text-lg font-semibold text-white">Haftalık Randevu Takvimi</h2>
+                            <p className="text-xs text-slate-400">
+                                {weekStart.toLocaleDateString('tr-TR')} - {weekEnd.toLocaleDateString('tr-TR')}
+                            </p>
                         </div>
-                        <span className="ml-4 px-3 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-full text-xs font-bold">
-                            {appointments.length} Kayıt
-                        </span>
+
+                        <div className="flex items-center gap-2 bg-slate-700/50 rounded-lg p-1 ml-4 shadow-inner">
+                            <button onClick={handlePrevWeek} className="p-1 hover:bg-slate-600 rounded text-slate-300">
+                                <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => setCurrentDate(new Date())}
+                                className="px-2 py-0.5 text-xs font-medium text-slate-300 hover:text-white"
+                            >
+                                Bugün
+                            </button>
+                            <button onClick={handleNextWeek} className="p-1 hover:bg-slate-600 rounded text-slate-300">
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
                     <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
                         <X className="w-6 h-6" />
                     </button>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 overflow-auto p-4 custom-scrollbar">
+                {/* Content - Calendar Grid */}
+                <div className="flex-1 overflow-hidden flex flex-col bg-slate-950">
                     {loading ? (
                         <div className="flex items-center justify-center h-full text-slate-500 gap-2">
                             <RefreshCw className="w-5 h-5 animate-spin" /> Yükleniyor...
                         </div>
                     ) : error ? (
-                        <div className="flex flex-col items-center justify-center h-full text-red-400 gap-2 p-4 text-center">
-                            <p className="font-bold">Bir hata oluştu</p>
-                            <p className="text-sm">{error}</p>
-                            <p className="text-xs text-slate-500 mt-2">Firebase Console {'>'} Firestore Database {'>'} Rules sekmesini kontrol ediniz.</p>
-                        </div>
-                    ) : appointments.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-slate-500 border-2 border-dashed border-slate-800 rounded-xl">
-                            <Calendar className="w-8 h-8 opacity-50 mb-2" />
-                            <p>Henüz randevu verisi yok.</p>
-                            <p className="text-xs opacity-50 mt-1">Veritabanında 'randevular' koleksiyonu var mı?</p>
+                        <div className="flex flex-col items-center justify-center h-full text-red-400 gap-2">
+                            <p>{error}</p>
                         </div>
                     ) : (
-                        <div className="grid gap-3">
-                            {appointments.map((apt) => (
-                                <div key={apt.id} className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 hover:border-purple-500/30 transition-colors">
-                                    <div className="flex flex-col gap-1">
-                                        <div className="flex justify-between items-start">
-                                            <h3 className="font-semibold text-slate-200">
-                                                {/* Veri Yapısı: projectName, appointmentDate, projectType */}
-                                                {apt.projectName || apt.musteriAdi || apt.title || 'İsimsiz'}
-                                            </h3>
-                                            <span className="text-xs font-mono text-slate-500 bg-slate-900 px-1.5 py-0.5 rounded">
-                                                {apt.appointmentDate ? String(apt.appointmentDate) : 'Tarih Yok'}
-                                            </span>
+                        <div className="grid grid-cols-7 h-full divide-x divide-slate-800">
+                            {weekDays.map((date, index) => {
+                                const dateKey = date.toDateString();
+                                const dayAppointments = weeklyAppointments[dateKey] || [];
+                                const isToday = date.toDateString() === new Date().toDateString();
+
+                                return (
+                                    <div key={index} className={`flex flex-col h-full min-w-[140px] ${isToday ? 'bg-slate-900/80' : ''}`}>
+                                        {/* Day Header */}
+                                        <div className={`p-2 border-b border-slate-800 text-center ${isToday ? 'bg-purple-900/20 border-purple-500/30' : 'bg-slate-900'}`}>
+                                            <div className={`text-sm font-semibold ${isToday ? 'text-purple-400' : 'text-slate-300'}`}>
+                                                {WEEK_DAYS[index]}
+                                            </div>
+                                            <div className={`text-xs ${isToday ? 'text-purple-300' : 'text-slate-500'}`}>
+                                                {date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })}
+                                            </div>
                                         </div>
 
-                                        <div className="text-sm text-slate-400">
-                                            {apt.projectType && <span className="text-purple-400 mr-2 font-bold">[{apt.projectType}]</span>}
-                                            {apt.adres || apt.address || ''}
-                                        </div>
+                                        {/* Appointments List */}
+                                        <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
+                                            {dayAppointments.length > 0 ? (
+                                                dayAppointments.map(apt => (
+                                                    <div key={apt.id} className="bg-slate-800 border-l-2 border-purple-500 rounded p-2 text-xs shadow-sm hover:bg-slate-700 transition-colors group">
+                                                        <div className="font-bold text-slate-200 mb-1 truncate" title={apt.projectName}>
+                                                            {apt.projectName || 'İsimsiz'}
+                                                        </div>
 
-                                        <details className="mt-2">
-                                            <summary className="text-[10px] text-slate-600 cursor-pointer hover:text-slate-400">Veri Detayı (Debug)</summary>
-                                            <pre className="text-[10px] text-slate-500 mt-1 overflow-x-auto bg-slate-950/50 p-2 rounded border border-slate-800">
-                                                {JSON.stringify(apt, null, 2)}
-                                            </pre>
-                                        </details>
+                                                        {apt.projectType && (
+                                                            <div className="inline-block px-1.5 py-0.5 bg-slate-900 rounded text-[10px] text-purple-300 mb-1">
+                                                                {apt.projectType}
+                                                            </div>
+                                                        )}
+
+                                                        <div className="text-slate-400 line-clamp-2" title={apt.projectAddress}>
+                                                            {apt.projectAddress || 'Adres yok'}
+                                                        </div>
+
+                                                        {/* Saat bilgisi varsa göster (Timestamp'ten çeklebilir) */}
+                                                        {parseDate(apt.appointmentDate)?.getHours() !== 0 && (
+                                                            <div className="mt-1 text-right text-[10px] text-slate-500 font-mono">
+                                                                {parseDate(apt.appointmentDate)?.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="h-full flex items-center justify-center text-slate-700 text-xs italic">
+                                                    Boş
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>
