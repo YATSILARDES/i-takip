@@ -118,6 +118,17 @@ const AppointmentsModal: React.FC<AppointmentsModalProps> = ({ isOpen, onClose }
                 }
             }
         });
+
+        // Her gün için saat sıralaması yap
+        Object.keys(groups).forEach(key => {
+            groups[key].sort((a, b) => {
+                const dateA = parseDate(a.appointmentDate || a.randevuTarihi);
+                const dateB = parseDate(b.appointmentDate || b.randevuTarihi);
+                if (!dateA || !dateB) return 0;
+                return dateA.getTime() - dateB.getTime();
+            });
+        });
+
         return groups;
     };
 
