@@ -573,41 +573,40 @@ export default function App() {
         {/* --- ADDED: Dipos Randevular Button via Portal or Absolute (or just inside Header) --- */}
         {/* Let's put it next to Settings or Admin Panel logic if space allows, or near user info */}
 
-    </div>
-      </header >
+      </header>
 
-    {/* Main Content */ }
-    < main className = "flex-1 flex overflow-hidden relative" >
-      <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-slate-900 to-slate-800">
-        {/* Toolbar */}
-        <div className="px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-slate-200">Günlük Operasyon</h2>
+      {/* Main Content */}
+      <main className="flex-1 flex overflow-hidden relative">
+        <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-slate-900 to-slate-800">
+          {/* Toolbar */}
+          <div className="px-6 py-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-slate-200">Günlük Operasyon</h2>
 
-          <div className="flex gap-3">
-            {/* NEW BUTTON */}
-            <button
-              onClick={() => setIsAppointmentsModalOpen(true)}
-              className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all shadow-lg shadow-purple-500/20"
-            >
-              Dipos Randevular
-            </button>
+            <div className="flex gap-3">
+              {/* NEW BUTTON */}
+              <button
+                onClick={() => setIsAppointmentsModalOpen(true)}
+                className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all shadow-lg shadow-purple-500/20"
+              >
+                Dipos Randevular
+              </button>
 
-            <button
-              onClick={handleAddTaskClick}
-              className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all shadow-lg shadow-green-500/20">
-              <Plus className="w-4 h-4" />
-              Müşteri Ekle
-            </button>
+              <button
+                onClick={handleAddTaskClick}
+                className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all shadow-lg shadow-green-500/20">
+                <Plus className="w-4 h-4" />
+                Müşteri Ekle
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Board */}
-        <KanbanBoard tasks={tasks} onTaskClick={handleTaskClick} />
-      </div>
+          {/* Board */}
+          <KanbanBoard tasks={tasks} onTaskClick={handleTaskClick} />
+        </div>
       </main >
 
-    {/* Footer / Status Bar */ }
-    < footer className = "h-8 bg-slate-950 border-t border-slate-800 flex items-center justify-between px-4 text-xs text-slate-500" >
+      {/* Footer / Status Bar */}
+      < footer className="h-8 bg-slate-950 border-t border-slate-800 flex items-center justify-between px-4 text-xs text-slate-500" >
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-green-500"></div>
           <span>Sistem Aktif</span>
@@ -617,58 +616,58 @@ export default function App() {
         </div>
       </footer >
 
-    {/* Task Modal */ }
-    < TaskModal
-  isOpen = { isModalOpen }
-  onClose = {() => setIsModalOpen(false)
-}
-onSave = { handleSaveTask }
-onDelete = { handleDeleteTask }
-task = { selectedTask }
-nextOrderNumber = { nextOrderNumber }
-isAdmin = { user && ADMIN_EMAILS.includes(user.email || '')}
+      {/* Task Modal */}
+      < TaskModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)
+        }
+        onSave={handleSaveTask}
+        onDelete={handleDeleteTask}
+        task={selectedTask}
+        nextOrderNumber={nextOrderNumber}
+        isAdmin={user && ADMIN_EMAILS.includes(user.email || '')}
       />
 
-  < AdminPanel
-isOpen = { isAdminPanelOpen }
-onClose = {() => setIsAdminPanelOpen(false)}
-onSaveSettings = { handleSaveSettings }
-initialSettings = { appSettings }
-users = { ADMIN_EMAILS }
-tasks = { tasks }
-onTasksUpdate = {(newTasks) => {
-  // Toplu güncelleme için (Excel yükleme)
-  // Mevcut görevleri silip yenilerini eklemek veya güncellemek gerekebilir
-  // Şimdilik basitçe console'a yazalım, gerçek implementasyon karmaşık olabilir
-  console.log("Yeni görevler yüklendi:", newTasks);
-  // Burada Firestore'a toplu yazma işlemi yapılmalı
-  // Demo için sadece state güncelliyoruz (sayfa yenilenince gider)
-  setTasks(newTasks);
-}}
+      < AdminPanel
+        isOpen={isAdminPanelOpen}
+        onClose={() => setIsAdminPanelOpen(false)}
+        onSaveSettings={handleSaveSettings}
+        initialSettings={appSettings}
+        users={ADMIN_EMAILS}
+        tasks={tasks}
+        onTasksUpdate={(newTasks) => {
+          // Toplu güncelleme için (Excel yükleme)
+          // Mevcut görevleri silip yenilerini eklemek veya güncellemek gerekebilir
+          // Şimdilik basitçe console'a yazalım, gerçek implementasyon karmaşık olabilir
+          console.log("Yeni görevler yüklendi:", newTasks);
+          // Burada Firestore'a toplu yazma işlemi yapılmalı
+          // Demo için sadece state güncelliyoruz (sayfa yenilenince gider)
+          setTasks(newTasks);
+        }}
       />
 
-  < AppointmentsModal
-isOpen = { isAppointmentsModalOpen }
-onClose = {() => setIsAppointmentsModalOpen(false)}
+      < AppointmentsModal
+        isOpen={isAppointmentsModalOpen}
+        onClose={() => setIsAppointmentsModalOpen(false)}
       />
 
-{/* Toast Notification */ }
-{
-  toast.visible && (
-    <div className="fixed bottom-4 right-4 bg-slate-800 border border-blue-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 animate-slideIn z-50">
-      <div className="bg-blue-500/20 p-2 rounded-full">
-        <Bell className="w-6 h-6 text-blue-400" />
-      </div>
-      <div>
-        <h4 className="font-bold text-sm text-blue-400">Yeni Bildirim</h4>
-        <p className="text-sm text-slate-200">{toast.message}</p>
-      </div>
-      <button onClick={() => setToast({ ...toast, visible: false })} className="text-slate-500 hover:text-white ml-2">
-        <X className="w-4 h-4" />
-      </button>
-    </div>
-  )
-}
+      {/* Toast Notification */}
+      {
+        toast.visible && (
+          <div className="fixed bottom-4 right-4 bg-slate-800 border border-blue-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 animate-slideIn z-50">
+            <div className="bg-blue-500/20 p-2 rounded-full">
+              <Bell className="w-6 h-6 text-blue-400" />
+            </div>
+            <div>
+              <h4 className="font-bold text-sm text-blue-400">Yeni Bildirim</h4>
+              <p className="text-sm text-slate-200">{toast.message}</p>
+            </div>
+            <button onClick={() => setToast({ ...toast, visible: false })} className="text-slate-500 hover:text-white ml-2">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )
+      }
     </div >
   );
 }
