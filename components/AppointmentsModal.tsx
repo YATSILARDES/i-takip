@@ -53,16 +53,25 @@ const AppointmentsModal: React.FC<AppointmentsModalProps> = ({ isOpen, onClose }
     const parseDate = (dateData: any): Date | null => {
         if (!dateData) return null;
 
+        let date: Date | null = null;
+
         // 1. Firebase Timestamp (veya n8n JSON formatı: { seconds: ..., nanoseconds: ... })
         if (dateData.seconds || dateData.saniyeler) {
             const seconds = dateData.seconds || dateData.saniyeler;
-            return new Date(seconds * 1000);
+            date = new Date(seconds * 1000);
+        }
+        // 2. String Format (ISO vb.)
+        else if (typeof dateData === 'string') {
+            const parsed = new Date(dateData);
+            if (!isNaN(parsed.getTime())) {
+                date = parsed;
+            }
         }
 
-        // 2. String Format (ISO vb.)
-        if (typeof dateData === 'string') {
-            const parsed = new Date(dateData);
-            return isNaN(parsed.getTime()) ? null : parsed;
+        // Türkiye Saati Ayarı (+3 Saat Ekle)
+        if (date) {
+            date.setHours(date.getHours() + 3);
+            return date;
         }
 
         return null;
@@ -197,30 +206,33 @@ const AppointmentsModal: React.FC<AppointmentsModalProps> = ({ isOpen, onClose }
                                         {/* Appointments List */}
                                         <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
                                             {dayAppointments.length > 0 ? (
-                                                dayAppointments.map(apt => (
-                                                    <div key={apt.id} className="bg-slate-800 border-l-2 border-purple-500 rounded p-2 text-xs shadow-sm hover:bg-slate-700 transition-colors group">
-                                                        <div className="font-bold text-slate-200 mb-1 truncate" title={apt.projectName}>
-                                                            {apt.projectName || 'İsimsiz'}
-                                                        </div>
+                                                dayAppointments.map(apt => {
+                                                    const aptDate = parseDate(apt.appointmentDate || apt.randevuTarihi);
+                                                    const aptTime = aptDate?.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
-                                                        {apt.projectType && (
-                                                            <div className="inline-block px-1.5 py-0.5 bg-slate-900 rounded text-[10px] text-purple-300 mb-1">
-                                                                {apt.projectType}
+                                                    return (
+                                                        <div key={apt.id} className="bg-slate-800 border-l-2 border-purple-500 rounded p-2 text-xs shadow-sm hover:bg-slate-700 transition-colors group relative overflow-hidden">
+                                                            {/* Time Badge */}
+                                                            <div className="absolute top-0 right-0 bg-purple-600/20 text-purple-300 px-1.5 py-0.5 rounded-bl text-[10px] font-mono font-bold">
+                                                                {aptTime}
                                                             </div>
-                                                        )}
 
-                                                        <div className="text-slate-400 line-clamp-2" title={apt.projectAddress}>
-                                                            {apt.projectAddress || 'Adres yok'}
-                                                        </div>
-
-                                                        {/* Saat bilgisi varsa göster (Timestamp'ten çeklebilir) */}
-                                                        {parseDate(apt.appointmentDate)?.getHours() !== 0 && (
-                                                            <div className="mt-1 text-right text-[10px] text-slate-500 font-mono">
-                                                                {parseDate(apt.appointmentDate)?.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                                                            <div className="font-bold text-slate-200 mb-1 truncate pr-8" title={apt.projectName}>
+                                                                {apt.projectName || 'İsimsiz'}
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                ))
+
+                                                            {apt.projectType && (
+                                                                <div className="inline-block px-1.5 py-0.5 bg-slate-900 rounded text-[10px] text-purple-300 mb-1">
+                                                                    {apt.projectType}
+                                                                </div>
+                                                            )}
+
+                                                            <div className="text-slate-400 line-clamp-2" title={apt.projectAddress}>
+                                                                {apt.projectAddress || 'Adres yok'}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })
                                             ) : (
                                                 <div className="h-full flex items-center justify-center text-slate-700 text-xs italic">
                                                     Boş
