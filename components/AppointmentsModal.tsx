@@ -68,9 +68,9 @@ const AppointmentsModal: React.FC<AppointmentsModalProps> = ({ isOpen, onClose }
             }
         }
 
-        // Türkiye Saati Ayarı (+3 Saat Ekle)
+        // Türkiye Saati Ayarı (Otomatik: Tarayıcı zaten yerel saati gösterir)
+        // Ekstra manuel eklemeye gerek yok.
         if (date) {
-            date.setHours(date.getHours() + 3);
             return date;
         }
 
