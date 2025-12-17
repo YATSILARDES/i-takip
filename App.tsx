@@ -9,7 +9,8 @@ import TaskModal from './components/TaskModal';
 import AppointmentsModal from './components/AppointmentsModal';
 import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
-import Sidebar from './components/Sidebar'; // Layout Component
+import Sidebar from './components/Sidebar';
+import StatsOverview from './components/StatsOverview';
 import { Task, TaskStatus, AppSettings, StatusLabels } from './types';
 import { createPcmBlob, base64ToArrayBuffer, pcmToAudioBuffer } from './utils/audioUtils';
 import { auth, db } from './src/firebase';
@@ -83,7 +84,7 @@ export default function App() {
 
   // Sidebar State
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState('board');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   // Settings Listener
   useEffect(() => {
@@ -211,6 +212,7 @@ export default function App() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "İş Listesi");
     XLSX.writeFile(wb, "Is_Takip_Listesi.xlsx");
+    setToast({ message: "Excel dosyası indirildi.", visible: true });
   };
 
   const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -241,6 +243,19 @@ export default function App() {
       alert('Veriler başarıyla yüklendi!');
     };
     reader.readAsBinaryString(file);
+  };
+
+  // Tab Switching Logic
+  const handleTabChange = (tab: string) => {
+    if (tab === 'settings') {
+      setIsAdminPanelOpen(true);
+      return;
+    }
+    if (tab === 'reports') {
+      handleExportExcel(); // Reports button triggers Excel export for now
+      return;
+    }
+    setActiveTab(tab);
   };
 
   const handleAddTaskClick = () => {
@@ -444,45 +459,70 @@ export default function App() {
     return <Login />;
   }
 
+  // Content Selection Logic
+  let content = null;
+  if (activeTab === 'dashboard') {
+    content = (
+      <>
+        <StatsOverview tasks={tasks} />
+        <div className="flex-1 overflow-hidden bg-white/50 rounded-3xl border border-white/60 relative backdrop-blur-md shadow-lg shadow-slate-200/50">
+          <KanbanBoard tasks={tasks} onTaskClick={handleTaskClick} />
+        </div>
+      </>
+    );
+  } else if (activeTab === 'projects' || activeTab === 'archive') {
+    // Re-use Board for now, maybe filtered later
+    content = (
+      <div className="h-full bg-slate-100/50 rounded-3xl border border-slate-200/60 overflow-hidden flex flex-col relative backdrop-blur-sm">
+        <KanbanBoard tasks={tasks} onTaskClick={handleTaskClick} />
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900">
+    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-slate-50 via-slate-50 to-indigo-50/40">
 
       {/* Sidebar */}
       <Sidebar
         isOpen={isSidebarOpen}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         isAdmin={user && ADMIN_EMAILS.includes(user.email || '')}
+        onLogout={handleSignOut}
       />
 
       {/* Main Layout Column */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
 
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-10 w-full shrink-0">
+        <header className="h-20 flex items-center justify-between px-8 z-10 w-full shrink-0">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"
+              className="md:hidden p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"
             >
-              <Layout className="w-5 h-5 transform rotate-90" />
+              <Layout className="w-5 h-5" />
             </button>
 
-            {/* Breadcrumb / Title */}
-            <div className="hidden md:flex items-center gap-2 text-sm text-slate-500">
-              <span>Uygulama</span>
-              <span className="text-slate-300">/</span>
-              <span className="font-medium text-slate-900">Proje Panosu</span>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900">
+                {activeTab === 'dashboard' ? 'Genel Bakış' :
+                  activeTab === 'projects' ? 'Projeler' :
+                    activeTab === 'archive' ? 'Arşiv' : 'Panel'}
+              </h1>
+              <p className="text-xs text-slate-500">
+                Hoş geldin, <span className="font-semibold text-blue-600">{user.displayName || user.email?.split('@')[0]}</span>
+              </p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
             {/* Gemini Button */}
-            <div className="bg-slate-100/50 rounded-full px-1 py-1 border border-slate-200 flex items-center">
+            <div className="bg-white rounded-full px-1 py-1 border border-slate-200 shadow-sm flex items-center">
               {!connected ? (
                 <button
                   onClick={connectToGemini}
-                  className="flex items-center gap-2 px-3 py-1.5 text-slate-500 hover:text-slate-900 hover:bg-white rounded-full transition-all"
+                  className="flex items-center gap-2 px-3 py-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-full transition-all"
                   title="Sesli Asistanı Başlat"
                 >
                   <MicOff className="w-4 h-4" />
@@ -500,55 +540,30 @@ export default function App() {
               )}
             </div>
 
-            <div className="h-6 w-px bg-slate-200 mx-1"></div>
-
-            {/* User Profile */}
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
-                <div className="text-sm font-semibold text-slate-900">{user.displayName || user.email?.split('@')[0]}</div>
-                <div className="text-[10px] text-slate-500 font-medium uppercase tracking-wide">Mühendis Hesabı</div>
-              </div>
+            {/* Action Buttons */}
+            <div className="flex gap-2">
               <button
-                onClick={handleSignOut}
-                className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full transition-colors"
-                title="Çıkış Yap"
+                onClick={() => setIsAppointmentsModalOpen(true)}
+                className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm"
               >
-                <LogOut className="w-5 h-5" />
+                Randevular
+              </button>
+
+              <button
+                onClick={handleAddTaskClick}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-semibold transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                Yeni İş
               </button>
             </div>
+
           </div>
         </header>
 
-        {/* Action Toolbar */}
-        <div className="px-8 py-6 flex items-center justify-between w-full shrink-0">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Günlük Operasyon</h2>
-            <p className="text-slate-500 text-sm mt-1">Bugünkü iş akışınızı yönetin ve takip edin.</p>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => setIsAppointmentsModalOpen(true)}
-              className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-semibold transition-all shadow-sm"
-            >
-              Dipos Randevular
-            </button>
-
-            <button
-              onClick={handleAddTaskClick}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 text-sm font-semibold transition-all shadow-lg shadow-blue-600/20 active:scale-95"
-            >
-              <Plus className="w-4 h-4" />
-              Yeni Müşteri
-            </button>
-          </div>
-        </div>
-
-        {/* Content Area */}
-        <div className="flex-1 overflow-hidden px-8 pb-8 w-full">
-          <div className="h-full bg-slate-100/50 rounded-3xl border border-slate-200/60 overflow-hidden flex flex-col relative backdrop-blur-sm">
-            <KanbanBoard tasks={tasks} onTaskClick={handleTaskClick} />
-          </div>
+        {/* Dynamic Content Area */}
+        <div className="flex-1 overflow-hidden px-8 pb-8 w-full flex flex-col">
+          {content}
         </div>
 
       </div>
@@ -584,7 +599,7 @@ export default function App() {
 
       {/* Toast Notification */}
       {toast.visible && (
-        <div className="fixed bottom-6 right-6 bg-white border border-slate-100 text-slate-800 px-6 py-4 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] flex items-center gap-4 animate-slideIn z-50 ring-1 ring-black/5">
+        <div className="fixed bottom-6 right-6 bg-white border border-slate-100 text-slate-600 px-6 py-4 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] flex items-center gap-4 animate-slideIn z-50 ring-1 ring-black/5">
           <div className="bg-blue-50 p-2.5 rounded-full">
             <Bell className="w-5 h-5 text-blue-600" />
           </div>
