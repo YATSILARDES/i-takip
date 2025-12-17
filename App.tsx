@@ -11,6 +11,7 @@ import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
 import Sidebar from './components/Sidebar';
 import StatsOverview from './components/StatsOverview';
+import OperationsReport from './components/OperationsReport';
 import { Task, TaskStatus, AppSettings, StatusLabels } from './types';
 import { createPcmBlob, base64ToArrayBuffer, pcmToAudioBuffer } from './utils/audioUtils';
 import { auth, db } from './src/firebase';
@@ -465,6 +466,7 @@ export default function App() {
     content = (
       <>
         <StatsOverview tasks={tasks} />
+        <OperationsReport tasks={tasks} />
         <div className="flex-1 overflow-hidden bg-white/50 rounded-3xl border border-white/60 relative backdrop-blur-md shadow-lg shadow-slate-200/50">
           <KanbanBoard tasks={tasks} onTaskClick={handleTaskClick} />
         </div>
