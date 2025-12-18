@@ -496,6 +496,7 @@ export default function App() {
               <span className="font-bold text-sm">Dashboard'a Dön</span>
             </button>
           </div>
+          <KanbanBoard tasks={tasks} onTaskClick={handleTaskClick} initialFilter={boardFilter} searchTerm={searchTerm} />
         </div>
       );
     }
