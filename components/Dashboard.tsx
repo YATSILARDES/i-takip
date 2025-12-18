@@ -9,6 +9,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ tasks, onNavigate, onTaskClick }) => {
+    const [filter, setFilter] = React.useState<'daily' | 'weekly' | 'monthly'>('daily');
 
     // --- İstatistik Hesaplamaları ---
     const getCount = (status: TaskStatus) => tasks.filter(t => t.status === status).length;
@@ -56,8 +57,30 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, onNavigate, onTaskClick })
         },
     ];
 
-    // Son Eklenenler (Son 5 iş)
-    const recentTasks = [...tasks]
+    // Filtreleme Mantığı
+    const filteredTasks = tasks.filter(task => {
+        const taskDate = task.createdAt?.seconds ? new Date(task.createdAt.seconds * 1000) : new Date(task.date || '');
+        const now = new Date();
+        now.setHours(0, 0, 0, 0); // Normalize 'now' to start of day for consistent comparison
+
+        const taskDay = new Date(taskDate);
+        taskDay.setHours(0, 0, 0, 0); // Normalize task date to start of day
+
+        const diffTime = Math.abs(now.getTime() - taskDay.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (filter === 'daily') {
+            return taskDay.getTime() === now.getTime(); // Compare normalized dates
+        } else if (filter === 'weekly') {
+            return diffDays <= 7;
+        } else if (filter === 'monthly') {
+            return diffDays <= 30;
+        }
+        return true;
+    });
+
+    // Son Eklenenler (Filtrelenmiş ve Sıralanmış)
+    const recentTasks = [...filteredTasks]
         .sort((a, b) => {
             const dateA = a.createdAt?.seconds ? new Date(a.createdAt.seconds * 1000) : new Date(a.date || '');
             const dateB = b.createdAt?.seconds ? new Date(b.createdAt.seconds * 1000) : new Date(b.date || '');
@@ -142,11 +165,33 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, onNavigate, onTaskClick })
                     {/* Sağ Kolon: Son İşlemler / Liste */}
                     <div className="w-full lg:w-96 flex flex-col gap-6">
                         <div className="bg-white rounded-lg shadow-sm p-0 overflow-hidden border border-slate-100 h-full max-h-[600px] flex flex-col">
-                            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                                <h3 className="font-bold text-slate-700 flex items-center gap-2">
-                                    <Clock className="w-4 h-4 text-slate-400" />
-                                    Son Eklenenler
-                                </h3>
+                            <div className="p-4 border-b border-slate-100 flex flex-col gap-3 bg-slate-50/50">
+                                <div className="flex justify-between items-center">
+                                    <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                                        <Clock className="w-4 h-4 text-slate-400" />
+                                        Son Eklenenler
+                                    </h3>
+                                </div>
+                                <div className="flex bg-slate-200 rounded-lg p-1 gap-1">
+                                    <button
+                                        onClick={() => setFilter('daily')}
+                                        className={`flex-1 py-1 text-[10px] font-bold rounded-md transition-all ${filter === 'daily' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                    >
+                                        Günlük
+                                    </button>
+                                    <button
+                                        onClick={() => setFilter('weekly')}
+                                        className={`flex-1 py-1 text-[10px] font-bold rounded-md transition-all ${filter === 'weekly' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                    >
+                                        Haftalık
+                                    </button>
+                                    <button
+                                        onClick={() => setFilter('monthly')}
+                                        className={`flex-1 py-1 text-[10px] font-bold rounded-md transition-all ${filter === 'monthly' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                    >
+                                        Aylık
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="overflow-y-auto p-2 space-y-2 custom-scrollbar flex-1">
