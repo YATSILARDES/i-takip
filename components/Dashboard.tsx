@@ -9,7 +9,7 @@ interface DashboardProps {
     onFilterMissing: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ tasks, onNavigate, onTaskClick }) => {
+const Dashboard: React.FC<DashboardProps> = ({ tasks, onNavigate, onTaskClick, onFilterMissing }) => {
     const [filter, setFilter] = React.useState<'daily' | 'weekly' | 'monthly'>('daily');
 
     // --- İstatistik Hesaplamaları ---
