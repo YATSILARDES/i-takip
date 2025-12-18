@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GoogleGenAI, FunctionDeclaration, Type, LiveServerMessage, Modality } from '@google/genai';
 import * as XLSX from 'xlsx';
-import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X } from 'lucide-react';
+import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, ChevronLeft } from 'lucide-react';
 import KanbanBoard from './components/KanbanBoard';
 import Visualizer from './components/Visualizer';
 import TaskModal from './components/TaskModal';
@@ -12,6 +12,7 @@ import Login from './components/Login';
 import Sidebar from './components/Sidebar';
 import StatsOverview from './components/StatsOverview';
 import OperationsReport from './components/OperationsReport';
+import Dashboard from './components/Dashboard';
 import { Task, TaskStatus, AppSettings, StatusLabels } from './types';
 import { createPcmBlob, base64ToArrayBuffer, pcmToAudioBuffer } from './utils/audioUtils';
 import { auth, db } from './src/firebase';
@@ -86,6 +87,10 @@ export default function App() {
   // Sidebar State
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  // Dashboard Navigation State
+  const [viewMode, setViewMode] = useState<'dashboard' | 'board'>('dashboard');
+  const [boardFilter, setBoardFilter] = useState<TaskStatus | undefined>(undefined);
 
   // Settings Listener
   useEffect(() => {
@@ -257,6 +262,9 @@ export default function App() {
       return;
     }
     setActiveTab(tab);
+    if (tab === 'dashboard') {
+      setViewMode('dashboard');
+    }
   };
 
   const handleAddTaskClick = () => {
@@ -460,18 +468,37 @@ export default function App() {
     return <Login />;
   }
 
+  // Dashboard Navigasyon Fonksiyonu
+  const handleDashboardNavigate = (status?: TaskStatus) => {
+    setBoardFilter(status);
+    setViewMode('board');
+  };
+
   // Content Selection Logic
   let content = null;
   if (activeTab === 'dashboard') {
-    content = (
-      <>
-        <StatsOverview tasks={tasks} />
-        <OperationsReport tasks={tasks} />
-        <div className="flex-1 overflow-hidden bg-white/50 rounded-3xl border border-white/60 relative backdrop-blur-md shadow-lg shadow-slate-200/50">
-          <KanbanBoard tasks={tasks} onTaskClick={handleTaskClick} />
+    if (viewMode === 'dashboard') {
+      content = (
+        <Dashboard
+          tasks={tasks}
+          onNavigate={handleDashboardNavigate}
+          onTaskClick={handleTaskClick}
+        />
+      );
+    } else {
+      // Board View (Navigated from Dashboard or separate view)
+      content = (
+        <div className="flex-1 overflow-hidden bg-white/50 rounded-3xl border border-white/60 relative backdrop-blur-md shadow-lg shadow-slate-200/50 flex flex-col">
+          <div className="p-4 border-b border-white/50 flex items-center gap-2">
+            <button onClick={() => setViewMode('dashboard')} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors">
+              <ChevronLeft className="w-5 h-5" />
+              <span className="font-bold text-sm">Dashboard'a Dön</span>
+            </button>
+          </div>
+          <KanbanBoard tasks={tasks} onTaskClick={handleTaskClick} initialFilter={boardFilter} />
         </div>
-      </>
-    );
+      );
+    }
   } else if (activeTab === 'projects' || activeTab === 'archive') {
     // Re-use Board for now, maybe filtered later
     content = (
@@ -508,7 +535,7 @@ export default function App() {
 
             <div>
               <h1 className="text-xl font-bold text-slate-900">
-                {activeTab === 'dashboard' ? 'Genel Bakış' :
+                {activeTab === 'dashboard' ? (viewMode === 'dashboard' ? 'Genel Bakış' : 'İş Listesi') :
                   activeTab === 'projects' ? 'Projeler' :
                     activeTab === 'archive' ? 'Arşiv' : 'Panel'}
               </h1>

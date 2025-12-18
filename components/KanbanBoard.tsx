@@ -5,6 +5,7 @@ import { MoreVertical, Search, Filter, Calendar, MapPin, Phone, User as UserIcon
 interface KanbanBoardProps {
   tasks: Task[];
   onTaskClick: (task: Task) => void;
+  initialFilter?: TaskStatus;
 }
 
 const columns: TaskStatus[] = [
@@ -26,8 +27,21 @@ const StatusIcon = ({ status }: { status: TaskStatus }) => {
   }
 };
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick, initialFilter }) => {
   const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
+
+  // Eğer initialFilter varsa ve o kolondaki kartları göstermek istiyorsak,
+  // KanbanBoard yapısı gereği tüm kolonlar görünüyor.
+  // Ancak kullanıcı "sadece o bölümü" görmek istemişti. 
+  // O zaman belki de sadece o kolonu render etmeliyiz veya scroll etmeliyiz?
+  // Kullanıcı "kendi bölümleri görünecek" dedi.
+
+  // Şimdilik sadece render ediyoruz, ama "filtreleme" mantığını kolon gizleme olarak mı yoksa
+  // sadece o kolona focuslanma olarak mı yapmalıyız?
+  // Basitlik adına: Eğer initialFilter varsa SADECE o kolonu gösterelim.
+
+  const displayedColumns = initialFilter ? [initialFilter] : columns;
+
 
   const handleSearchChange = (status: string, value: string) => {
     setSearchTerms(prev => ({
@@ -54,8 +68,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick }) => {
 
   return (
     <div className="flex-1 overflow-x-auto overflow-y-hidden p-6 w-full h-full">
-      <div className="flex gap-6 h-full min-w-[1500px]">
-        {columns.map((status) => {
+      <div className="flex gap-6 h-full min-w-[350px]">
+        {displayedColumns.map((status) => {
           const filteredTasks = getFilteredTasks(status);
           const searchTerm = searchTerms[status] || '';
 
