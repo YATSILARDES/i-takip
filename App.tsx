@@ -580,13 +580,11 @@ export default function App() {
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
-                    if (e.target.value.length > 0 && viewMode !== 'board') {
-                      // Optional: Auto switch to board? Or let user stay on dashboard?
-                      // User said "filtreleyebileceğimiz alan". If I type, I expect results.
-                      // Let's switch to board if they are on dashboard/projects to show results.
-                      // But if on dashboard, maybe they just want to search?
-                      // Let's keep it simple: Search highlights on board.
-                      if (activeTab === 'dashboard') setViewMode('board');
+                    if (e.target.value.length > 0) {
+                      setBoardFilter(undefined); // Clear column filters to search everywhere
+                      if (activeTab === 'dashboard' && viewMode !== 'board') {
+                        setViewMode('board');
+                      }
                     }
                   }}
                   className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg pl-9 pr-3 py-2 w-64 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
