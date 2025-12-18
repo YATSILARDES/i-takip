@@ -6,6 +6,7 @@ interface DashboardProps {
     tasks: Task[];
     onNavigate: (status?: TaskStatus) => void;
     onTaskClick: (task: Task) => void;
+    onFilterMissing: () => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ tasks, onNavigate, onTaskClick }) => {
@@ -114,40 +115,44 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, onNavigate, onTaskClick })
                     {/* Sol Kolon: Kartlar */}
                     <div className="flex-1">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {cards.map((card, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => onNavigate(card.status)}
-                                    className={`bg-white p-6 rounded-lg shadow-sm border-t-4 border-slate-100 ${card.borderColor} hover:shadow-md transition-all text-left flex flex-col justify-between group h-36 relative overflow-hidden`}
-                                >
-                                    <div className="flex justify-between items-start w-full mb-2 z-10 relative">
-                                        <h3 className="font-bold text-slate-600 text-xs uppercase tracking-wider">{card.title}</h3>
-                                    </div>
-
-                                    <div className="flex items-end justify-between z-10 relative">
-                                        <span className={`text-4xl font-bold ${card.color}`}>
-                                            {card.score}
-                                        </span>
-                                        <div className={`p-2 rounded-full bg-slate-50 group-hover:bg-white transition-colors`}>
-                                            <Activity className={`w-5 h-5 ${card.color} opacity-50 group-hover:opacity-100`} />
+                            {cards.map((card, idx) => {
+                                const isGasAlert = card.status === TaskStatus.GAS_OPENED && card.score > 0;
+                                return (
+                                    <button
+                                        key={idx}
+                                        onClick={() => onNavigate(card.status)}
+                                        className={`${isGasAlert ? 'bg-red-50 animate-pulse ring-2 ring-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-white'} p-6 rounded-lg shadow-sm border-t-4 border-slate-100 ${card.borderColor} hover:shadow-md transition-all text-left flex flex-col justify-between group h-36 relative overflow-hidden`}
+                                    >
+                                        <div className="flex justify-between items-start w-full mb-2 z-10 relative">
+                                            <h3 className="font-bold text-slate-600 text-xs uppercase tracking-wider">{card.title}</h3>
+                                            {isGasAlert && <span className="absolute -top-1 -right-1 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span></span>}
                                         </div>
-                                    </div>
 
-                                    <div className="w-full h-px bg-slate-100 my-3 relative z-10" />
+                                        <div className="flex items-end justify-between z-10 relative">
+                                            <span className={`text-4xl font-bold ${card.color}`}>
+                                                {card.score}
+                                            </span>
+                                            <div className={`p-2 rounded-full bg-slate-50 group-hover:bg-white transition-colors`}>
+                                                <Activity className={`w-5 h-5 ${card.color} opacity-50 group-hover:opacity-100`} />
+                                            </div>
+                                        </div>
 
-                                    <p className="text-[11px] text-slate-400 font-medium relative z-10">
-                                        {card.subText}
-                                    </p>
+                                        <div className="w-full h-px bg-slate-100 my-3 relative z-10" />
 
-                                    {/* Decorative Background Icon */}
-                                    <Activity className="absolute -right-4 -bottom-4 w-32 h-32 text-slate-50 opacity-50 group-hover:scale-110 transition-transform duration-500 z-0" />
-                                </button>
-                            ))}
+                                        <p className="text-[11px] text-slate-400 font-medium relative z-10">
+                                            {card.subText}
+                                        </p>
+
+                                        {/* Decorative Background Icon */}
+                                        <Activity className="absolute -right-4 -bottom-4 w-32 h-32 text-slate-50 opacity-50 group-hover:scale-110 transition-transform duration-500 z-0" />
+                                    </button>
+                                );
+                            })}
 
                             {/* Randevu Kartı Özel */}
                             {/* Eksiği Olan İşler Kartı */}
                             <button
-                                onClick={() => { }} // Buraya eksiği olanların listesine gitme fonksiyonu eklenebilir
+                                onClick={onFilterMissing}
                                 className="bg-white p-6 rounded-lg shadow-sm border-t-4 border-slate-100 hover:border-red-500 hover:shadow-md transition-all text-left flex flex-col justify-between group h-36 relative overflow-hidden"
                             >
                                 <div className="flex justify-between items-start w-full mb-2 z-10 relative">

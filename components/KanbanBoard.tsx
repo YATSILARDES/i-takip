@@ -71,7 +71,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick, initialFi
         (task.jobDescription && task.jobDescription.toLocaleLowerCase('tr').includes(term)) ||
         task.orderNumber.toString().includes(term) ||
         (task.phone && task.phone.includes(term)) ||
-        (task.address && task.address.toLocaleLowerCase('tr').includes(term))
+        (task.address && task.address.toLocaleLowerCase('tr').includes(term)) ||
+        (term === 'eksik' && task.checkStatus === 'missing') ||
+        (term === 'temiz' && task.checkStatus === 'clean')
       );
     });
   };

@@ -475,6 +475,12 @@ export default function App() {
     setViewMode('board');
   };
 
+  const handleFilterMissing = () => {
+    setSearchTerm('eksik');
+    setBoardFilter(undefined);
+    setViewMode('board');
+  };
+
   // Content Selection Logic
   let content = null;
   if (activeTab === 'dashboard') {
@@ -484,6 +490,7 @@ export default function App() {
           tasks={tasks}
           onNavigate={handleDashboardNavigate}
           onTaskClick={handleTaskClick}
+          onFilterMissing={handleFilterMissing}
         />
       );
     } else {
