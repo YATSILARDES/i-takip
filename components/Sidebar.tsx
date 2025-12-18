@@ -24,7 +24,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
     return (
         <div
             className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 shadow-2xl shadow-black/20
+        fixed inset-y-0 left-0 z-50 w-64 bg-[#2c3e50] border-r border-[#34495e] shadow-2xl shadow-black/20
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         md:relative md:translate-x-0
@@ -32,12 +32,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
       `}
         >
             {/* Logo Area */}
-            <div className="h-20 flex items-center px-8 border-b border-slate-800">
+            <div className="h-20 flex items-center px-8 border-b border-[#34495e]">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl shadow-lg shadow-blue-900/40 flex items-center justify-center">
+                    <div className="w-8 h-8 bg-white/10 rounded-xl shadow-lg flex items-center justify-center border border-white/10">
                         <span className="text-white font-bold text-lg">İ</span>
                     </div>
-                    <span className="font-bold text-xl text-slate-100 tracking-tight">İş Takip</span>
+                    <span className="font-bold text-xl text-white tracking-tight">İş Takip</span>
                 </div>
             </div>
 
@@ -52,8 +52,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
                             className={`
                 w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200
                 ${isActive
-                                    ? 'bg-blue-600/10 text-blue-400 shadow-sm shadow-blue-900/20 ring-1 ring-blue-500/20'
-                                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800'
+                                    ? 'bg-[#34495e] text-white shadow-sm ring-1 ring-white/10'
+                                    : 'text-slate-400 hover:text-white hover:bg-[#34495e]'
                                 }
               `}
                         >
@@ -65,8 +65,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeTab, onTabChange, isAdm
             </nav>
 
             {/* Bottom Actions */}
-            <div className="p-4 border-t border-slate-800">
-                <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-4 text-white shadow-lg shadow-black/20 mb-4 border border-slate-700">
+            <div className="p-4 border-t border-[#34495e]">
+                <div className="bg-[#34495e] rounded-2xl p-4 text-white shadow-lg mb-4 border border-white/5">
                     <h4 className="font-bold text-sm mb-1 text-slate-200">Pro Sürüm</h4>
                     <p className="text-xs text-slate-400 mb-3">Tüm özelliklere erişmek için yükseltin.</p>
                     <button className="w-full py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-semibold transition-colors text-white">

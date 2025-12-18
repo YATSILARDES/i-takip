@@ -524,23 +524,23 @@ export default function App() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
 
         {/* Top Header */}
-        <header className="h-20 flex items-center justify-between px-8 z-10 w-full shrink-0">
+        <header className="h-20 flex items-center justify-between px-8 z-10 w-full shrink-0 bg-[#2c3e50] border-b border-[#34495e] shadow-md">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="md:hidden p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"
+              className="md:hidden p-2 hover:bg-[#34495e] rounded-lg text-slate-400 transition-colors"
             >
               <Layout className="w-5 h-5" />
             </button>
 
             <div>
-              <h1 className="text-xl font-bold text-slate-900">
+              <h1 className="text-xl font-bold text-white">
                 {activeTab === 'dashboard' ? (viewMode === 'dashboard' ? 'Genel Bakış' : 'İş Listesi') :
                   activeTab === 'projects' ? 'Projeler' :
                     activeTab === 'archive' ? 'Arşiv' : 'Panel'}
               </h1>
-              <p className="text-xs text-slate-500">
-                Hoş geldin, <span className="font-semibold text-blue-600">{user.displayName || user.email?.split('@')[0]}</span>
+              <p className="text-xs text-slate-400">
+                Hoş geldin, <span className="font-semibold text-blue-400">{user.displayName || user.email?.split('@')[0]}</span>
               </p>
             </div>
           </div>

@@ -100,9 +100,9 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, onNavigate, onTaskClick })
         <div className="flex flex-col h-full overflow-hidden bg-slate-100">
 
             {/* Breadcrumb Bar */}
-            <div className="bg-slate-800 border-b border-slate-700 px-6 py-3 flex items-center gap-2 text-sm text-slate-300 mb-6 shadow-sm">
-                <span className="font-bold text-slate-100 text-lg mr-4">Genel Bakış</span>
-                <div className="w-px h-5 bg-slate-600 mx-2" />
+            <div className="bg-[#2c3e50] border-b border-[#34495e] px-6 py-3 flex items-center gap-2 text-sm text-slate-400 mb-6 shadow-md">
+                <span className="font-bold text-white text-lg mr-4">Genel Bakış</span>
+                <div className="w-px h-5 bg-[#34495e] mx-2" />
                 <Home className="w-4 h-4" />
                 <ChevronRight className="w-4 h-4" />
                 <span className="font-semibold text-white">Dashboard</span>
