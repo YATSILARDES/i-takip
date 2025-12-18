@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GoogleGenAI, FunctionDeclaration, Type, LiveServerMessage, Modality } from '@google/genai';
 import * as XLSX from 'xlsx';
-import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, ChevronLeft } from 'lucide-react';
+import { Mic, MicOff, Layout, Plus, LogOut, Settings, Bell, X, ChevronLeft, Search } from 'lucide-react';
 import KanbanBoard from './components/KanbanBoard';
 import Visualizer from './components/Visualizer';
 import TaskModal from './components/TaskModal';
@@ -91,6 +91,7 @@ export default function App() {
   // Dashboard Navigation State
   const [viewMode, setViewMode] = useState<'dashboard' | 'board'>('dashboard');
   const [boardFilter, setBoardFilter] = useState<TaskStatus | undefined>(undefined);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Settings Listener
   useEffect(() => {
@@ -495,7 +496,6 @@ export default function App() {
               <span className="font-bold text-sm">Dashboard'a Dön</span>
             </button>
           </div>
-          <KanbanBoard tasks={tasks} onTaskClick={handleTaskClick} initialFilter={boardFilter} />
         </div>
       );
     }
@@ -503,7 +503,7 @@ export default function App() {
     // Re-use Board for now, maybe filtered later
     content = (
       <div className="h-full bg-slate-100/50 rounded-3xl border border-slate-200/60 overflow-hidden flex flex-col relative backdrop-blur-sm">
-        <KanbanBoard tasks={tasks} onTaskClick={handleTaskClick} />
+        <KanbanBoard tasks={tasks} onTaskClick={handleTaskClick} searchTerm={searchTerm} />
       </div>
     );
   }
@@ -570,7 +570,29 @@ export default function App() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              {/* Search Bar */}
+              <div className="relative hidden md:block mr-2">
+                <input
+                  type="text"
+                  placeholder="Müşteri ara..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    if (e.target.value.length > 0 && viewMode !== 'board') {
+                      // Optional: Auto switch to board? Or let user stay on dashboard?
+                      // User said "filtreleyebileceğimiz alan". If I type, I expect results.
+                      // Let's switch to board if they are on dashboard/projects to show results.
+                      // But if on dashboard, maybe they just want to search?
+                      // Let's keep it simple: Search highlights on board.
+                      if (activeTab === 'dashboard') setViewMode('board');
+                    }
+                  }}
+                  className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg pl-9 pr-3 py-2 w-64 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              </div>
+
               <button
                 onClick={() => setIsAppointmentsModalOpen(true)}
                 className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm"

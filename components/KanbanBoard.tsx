@@ -6,6 +6,7 @@ interface KanbanBoardProps {
   tasks: Task[];
   onTaskClick: (task: Task) => void;
   initialFilter?: TaskStatus;
+  searchTerm?: string;
 }
 
 const columns: TaskStatus[] = [
@@ -27,8 +28,17 @@ const StatusIcon = ({ status }: { status: TaskStatus }) => {
   }
 };
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick, initialFilter }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick, initialFilter, searchTerm }) => {
   const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
+
+  // Sync global search term to local state
+  React.useEffect(() => {
+    if (searchTerm !== undefined) {
+      const newTerms: Record<string, string> = {};
+      columns.forEach(col => newTerms[col] = searchTerm);
+      setSearchTerms(newTerms);
+    }
+  }, [searchTerm]);
 
   // Eğer initialFilter varsa ve o kolondaki kartları göstermek istiyorsak,
   // KanbanBoard yapısı gereği tüm kolonlar görünüyor.
