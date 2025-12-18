@@ -508,171 +508,170 @@ export default function App() {
         </div>
       );
     }
-  } else if (activeTab === 'projects' || activeTab === 'archive') {
-    // Re-use Board for now, maybe filtered later
+  } else if (activeTab === 'archive') {
+    // Archive View
     content = (
       <div className="h-full bg-slate-100/50 rounded-3xl border border-slate-200/60 overflow-hidden flex flex-col relative backdrop-blur-sm">
-        <div className="h-full bg-slate-100/50 rounded-3xl border border-slate-200/60 overflow-hidden flex flex-col relative backdrop-blur-sm">
-          <KanbanBoard tasks={tasks} onTaskClick={handleTaskClick} searchTerm={searchTerm} />
-        </div>
-        );
+        <KanbanBoard tasks={tasks} onTaskClick={handleTaskClick} searchTerm={searchTerm} />
+      </div>
+    );
   } else if (activeTab === 'reports') {
-          content = <Reports tasks={tasks} onExportExcel={handleExportExcel} />;
+    content = <Reports tasks={tasks} onExportExcel={handleExportExcel} />;
   }
 
-        return (
-        <div className="flex h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-slate-50 via-slate-50 to-indigo-50/40">
+  return (
+    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-slate-50 via-slate-50 to-indigo-50/40">
 
-          {/* Sidebar */}
-          <Sidebar
-            isOpen={isSidebarOpen}
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-            isAdmin={user && ADMIN_EMAILS.includes(user.email || '')}
-            onLogout={handleSignOut}
-          />
+      {/* Sidebar */}
+      <Sidebar
+        isOpen={isSidebarOpen}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        isAdmin={user && ADMIN_EMAILS.includes(user.email || '')}
+        onLogout={handleSignOut}
+      />
 
-          {/* Main Layout Column */}
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+      {/* Main Layout Column */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
 
-            {/* Top Header */}
-            <header className="h-20 flex items-center justify-between px-8 z-10 w-full shrink-0 bg-[#2c3e50] border-b border-[#34495e] shadow-md">
-              <div className="flex items-center gap-4">
+        {/* Top Header */}
+        <header className="h-20 flex items-center justify-between px-8 z-10 w-full shrink-0 bg-[#2c3e50] border-b border-[#34495e] shadow-md">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="md:hidden p-2 hover:bg-[#34495e] rounded-lg text-slate-400 transition-colors"
+            >
+              <Layout className="w-5 h-5" />
+            </button>
+
+            <div>
+              <h1 className="text-xl font-bold text-white">
+                {activeTab === 'dashboard' ? (viewMode === 'dashboard' ? 'Genel Bakış' : 'İş Listesi') :
+                  activeTab === 'projects' ? 'Projeler' :
+                    activeTab === 'archive' ? 'Arşiv' : 'Panel'}
+              </h1>
+              <p className="text-xs text-slate-400">
+                Hoş geldin, <span className="font-semibold text-blue-400">{user.displayName || user.email?.split('@')[0]}</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {/* Gemini Button */}
+            <div className="bg-white rounded-full px-1 py-1 border border-slate-200 shadow-sm flex items-center">
+              {!connected ? (
                 <button
-                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                  className="md:hidden p-2 hover:bg-[#34495e] rounded-lg text-slate-400 transition-colors"
+                  onClick={connectToGemini}
+                  className="flex items-center gap-2 px-3 py-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-full transition-all"
+                  title="Sesli Asistanı Başlat"
                 >
-                  <Layout className="w-5 h-5" />
+                  <MicOff className="w-4 h-4" />
+                  <span className="text-sm font-medium">Asistan</span>
                 </button>
+              ) : (
+                <button
+                  onClick={disconnect}
+                  className="flex items-center gap-2 px-3 py-1.5 text-red-500 bg-red-50 hover:bg-red-100 rounded-full transition-all animate-pulse"
+                  title="Bağlantıyı Kes"
+                >
+                  <Mic className="w-4 h-4" />
+                  <span className="text-sm font-medium">Dinliyor...</span>
+                </button>
+              )}
+            </div>
 
-                <div>
-                  <h1 className="text-xl font-bold text-white">
-                    {activeTab === 'dashboard' ? (viewMode === 'dashboard' ? 'Genel Bakış' : 'İş Listesi') :
-                      activeTab === 'projects' ? 'Projeler' :
-                        activeTab === 'archive' ? 'Arşiv' : 'Panel'}
-                  </h1>
-                  <p className="text-xs text-slate-400">
-                    Hoş geldin, <span className="font-semibold text-blue-400">{user.displayName || user.email?.split('@')[0]}</span>
-                  </p>
-                </div>
+            {/* Action Buttons */}
+            <div className="flex gap-2 items-center">
+              {/* Search Bar */}
+              <div className="relative hidden md:block mr-2">
+                <input
+                  type="text"
+                  placeholder="Müşteri ara..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    if (e.target.value.length > 0) {
+                      setBoardFilter(undefined); // Clear column filters to search everywhere
+                      if (activeTab === 'dashboard' && viewMode !== 'board') {
+                        setViewMode('board');
+                      }
+                    }
+                  }}
+                  className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg pl-9 pr-3 py-2 w-64 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               </div>
 
-              <div className="flex items-center gap-4">
-                {/* Gemini Button */}
-                <div className="bg-white rounded-full px-1 py-1 border border-slate-200 shadow-sm flex items-center">
-                  {!connected ? (
-                    <button
-                      onClick={connectToGemini}
-                      className="flex items-center gap-2 px-3 py-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-full transition-all"
-                      title="Sesli Asistanı Başlat"
-                    >
-                      <MicOff className="w-4 h-4" />
-                      <span className="text-sm font-medium">Asistan</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={disconnect}
-                      className="flex items-center gap-2 px-3 py-1.5 text-red-500 bg-red-50 hover:bg-red-100 rounded-full transition-all animate-pulse"
-                      title="Bağlantıyı Kes"
-                    >
-                      <Mic className="w-4 h-4" />
-                      <span className="text-sm font-medium">Dinliyor...</span>
-                    </button>
-                  )}
-                </div>
+              <button
+                onClick={() => setIsAppointmentsModalOpen(true)}
+                className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm"
+              >
+                Randevular
+              </button>
 
-                {/* Action Buttons */}
-                <div className="flex gap-2 items-center">
-                  {/* Search Bar */}
-                  <div className="relative hidden md:block mr-2">
-                    <input
-                      type="text"
-                      placeholder="Müşteri ara..."
-                      value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        if (e.target.value.length > 0) {
-                          setBoardFilter(undefined); // Clear column filters to search everywhere
-                          if (activeTab === 'dashboard' && viewMode !== 'board') {
-                            setViewMode('board');
-                          }
-                        }
-                      }}
-                      className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg pl-9 pr-3 py-2 w-64 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                    />
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  </div>
-
-                  <button
-                    onClick={() => setIsAppointmentsModalOpen(true)}
-                    className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm"
-                  >
-                    Randevular
-                  </button>
-
-                  <button
-                    onClick={handleAddTaskClick}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-semibold transition-all shadow-lg shadow-blue-600/20 active:scale-95"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Yeni İş
-                  </button>
-                </div>
-
-              </div>
-            </header>
-
-            {/* Dynamic Content Area */}
-            <div className="flex-1 overflow-hidden px-8 pb-8 w-full flex flex-col">
-              {content}
+              <button
+                onClick={handleAddTaskClick}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-semibold transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                Yeni İş
+              </button>
             </div>
 
           </div>
+        </header>
 
-          {/* Modals & Overlays */}
-          <TaskModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onSave={handleSaveTask}
-            onDelete={handleDeleteTask}
-            task={selectedTask}
-            nextOrderNumber={nextOrderNumber}
-            isAdmin={user && ADMIN_EMAILS.includes(user.email || '')}
-          />
-
-          <AdminPanel
-            isOpen={isAdminPanelOpen}
-            onClose={() => setIsAdminPanelOpen(false)}
-            onSaveSettings={handleSaveSettings}
-            initialSettings={appSettings}
-            users={ADMIN_EMAILS}
-            tasks={tasks}
-            onTasksUpdate={(newTasks) => {
-              console.log("Yeni görevler yüklendi:", newTasks);
-              setTasks(newTasks);
-            }}
-          />
-
-          <AppointmentsModal
-            isOpen={isAppointmentsModalOpen}
-            onClose={() => setIsAppointmentsModalOpen(false)}
-          />
-
-          {/* Toast Notification */}
-          {toast.visible && (
-            <div className="fixed bottom-6 right-6 bg-white border border-slate-100 text-slate-600 px-6 py-4 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] flex items-center gap-4 animate-slideIn z-50 ring-1 ring-black/5">
-              <div className="bg-blue-50 p-2.5 rounded-full">
-                <Bell className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm text-slate-900">Bildirim</h4>
-                <p className="text-sm text-slate-500">{toast.message}</p>
-              </div>
-              <button onClick={() => setToast({ ...toast, visible: false })} className="text-slate-400 hover:text-slate-600 ml-2">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+        {/* Dynamic Content Area */}
+        <div className="flex-1 overflow-hidden px-8 pb-8 w-full flex flex-col">
+          {content}
         </div>
-        );
+
+      </div>
+
+      {/* Modals & Overlays */}
+      <TaskModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveTask}
+        onDelete={handleDeleteTask}
+        task={selectedTask}
+        nextOrderNumber={nextOrderNumber}
+        isAdmin={user && ADMIN_EMAILS.includes(user.email || '')}
+      />
+
+      <AdminPanel
+        isOpen={isAdminPanelOpen}
+        onClose={() => setIsAdminPanelOpen(false)}
+        onSaveSettings={handleSaveSettings}
+        initialSettings={appSettings}
+        users={ADMIN_EMAILS}
+        tasks={tasks}
+        onTasksUpdate={(newTasks) => {
+          console.log("Yeni görevler yüklendi:", newTasks);
+          setTasks(newTasks);
+        }}
+      />
+
+      <AppointmentsModal
+        isOpen={isAppointmentsModalOpen}
+        onClose={() => setIsAppointmentsModalOpen(false)}
+      />
+
+      {/* Toast Notification */}
+      {toast.visible && (
+        <div className="fixed bottom-6 right-6 bg-white border border-slate-100 text-slate-600 px-6 py-4 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] flex items-center gap-4 animate-slideIn z-50 ring-1 ring-black/5">
+          <div className="bg-blue-50 p-2.5 rounded-full">
+            <Bell className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <h4 className="font-bold text-sm text-slate-900">Bildirim</h4>
+            <p className="text-sm text-slate-500">{toast.message}</p>
+          </div>
+          <button onClick={() => setToast({ ...toast, visible: false })} className="text-slate-400 hover:text-slate-600 ml-2">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
