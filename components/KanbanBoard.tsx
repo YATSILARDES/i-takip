@@ -66,6 +66,54 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick, initialFi
     });
   };
 
+  // Özel Görünüm: Eğer CHECK_COMPLETED veya DEPOSIT_PAID seçiliyse ve filtrelenmişse,
+  // Ekranı ikiye bölelim: Sol (Temiz/Hazır), Sağ (Eksikli)
+  const isSplitView = initialFilter && (initialFilter === TaskStatus.CHECK_COMPLETED || initialFilter === TaskStatus.DEPOSIT_PAID);
+
+  if (isSplitView) {
+    const status = initialFilter as TaskStatus;
+    const allTasksInStatus = tasks.filter(t => t.status === status);
+    const cleanTasks = allTasksInStatus.filter(t => t.checkStatus !== 'missing');
+    const missingTasks = allTasksInStatus.filter(t => t.checkStatus === 'missing');
+
+    return (
+      <div className="flex-1 p-6 w-full h-full overflow-hidden flex flex-col">
+        <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <StatusIcon status={status} />
+          {StatusLabels[status]} <span className="text-slate-400 text-sm font-normal">(Detaylı Görünüm)</span>
+        </h2>
+
+        <div className="flex gap-6 h-full overflow-hidden">
+          {/* Sol: Temiz / Hazır */}
+          <div className="flex-1 flex flex-col bg-emerald-50/50 rounded-[2rem] border border-emerald-100 backdrop-blur-sm">
+            <div className="p-4 border-b border-emerald-100 bg-emerald-100/30 flex justify-between items-center rounded-t-[2rem]">
+              <h3 className="font-bold text-emerald-800">Hazır / Temiz</h3>
+              <span className="bg-white px-2 py-0.5 rounded-full text-xs font-bold text-emerald-600 shadow-sm">{cleanTasks.length}</span>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+              {cleanTasks.map(task => (
+                <Card key={task.id} task={task} onClick={() => onTaskClick(task)} />
+              ))}
+            </div>
+          </div>
+
+          {/* Sağ: Eksikli */}
+          <div className="flex-1 flex flex-col bg-red-50/50 rounded-[2rem] border border-red-100 backdrop-blur-sm">
+            <div className="p-4 border-b border-red-100 bg-red-100/30 flex justify-between items-center rounded-t-[2rem]">
+              <h3 className="font-bold text-red-800">Eksikli / Müdahale Bekleyen</h3>
+              <span className="bg-white px-2 py-0.5 rounded-full text-xs font-bold text-red-600 shadow-sm">{missingTasks.length}</span>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+              {missingTasks.map(task => (
+                <Card key={task.id} task={task} onClick={() => onTaskClick(task)} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 overflow-x-auto overflow-y-hidden p-6 w-full h-full">
       <div className="flex gap-6 h-full min-w-[350px]">
@@ -106,59 +154,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick, initialFi
               {/* Tasks Container */}
               <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
                 {filteredTasks.map(task => (
-                  <div
-                    key={task.id}
-                    onClick={() => onTaskClick(task)}
-                    className="
-                      bg-white p-4 rounded-xl border border-transparent hover:border-blue-200 
-                      shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.1)] 
-                      transition-all duration-300 cursor-pointer group relative
-                    "
-                  >
-                    {/* Header: Title & Options */}
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="bg-slate-100 text-slate-500 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                          #{task.orderNumber}
-                        </span>
-                        <h4 className="font-bold text-slate-800 text-sm line-clamp-1 group-hover:text-blue-600 transition-colors">
-                          {task.title}
-                        </h4>
-                      </div>
-                    </div>
-
-                    {/* Metadata */}
-                    <div className="space-y-1.5 mb-3">
-                      {task.address && (
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                          <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                          <span className="truncate">{task.address}</span>
-                        </div>
-                      )}
-                      {task.assignee && (
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                          <UserIcon className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{task.assignee}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Tags / Footer */}
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-50 mt-2">
-                      <div className="flex gap-1.5">
-                        {task.checkStatus === 'clean' && (
-                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-semibold rounded-md border border-emerald-100">Temiz</span>
-                        )}
-                        {task.checkStatus === 'missing' && (
-                          <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-semibold rounded-md border border-amber-100">Eksik</span>
-                        )}
-                      </div>
-                      <span className="text-[10px] text-slate-400 font-medium">
-                        {new Date(task.date || task.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
-                      </span>
-                    </div>
-
-                  </div>
+                  <Card key={task.id} task={task} onClick={() => onTaskClick(task)} />
                 ))}
               </div>
             </div>
@@ -168,5 +164,61 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick, initialFi
     </div>
   );
 };
+
+// Sub-component for rendering a single card to avoid repetition
+const Card = ({ task, onClick }: { task: Task, onClick: () => void }) => (
+  <div
+    onClick={onClick}
+    className="
+        bg-white p-4 rounded-xl border border-transparent hover:border-blue-200 
+        shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.1)] 
+        transition-all duration-300 cursor-pointer group relative
+    "
+  >
+    {/* Header: Title & Options */}
+    <div className="flex justify-between items-start mb-2">
+      <div className="flex items-center gap-2">
+        <span className="bg-slate-100 text-slate-500 text-[10px] font-bold px-1.5 py-0.5 rounded">
+          #{task.orderNumber}
+        </span>
+        <h4 className="font-bold text-slate-800 text-sm line-clamp-1 group-hover:text-blue-600 transition-colors">
+          {task.title}
+        </h4>
+      </div>
+    </div>
+
+    {/* Metadata */}
+    <div className="space-y-1.5 mb-3">
+      {task.address && (
+        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+          <MapPin className="w-3.5 h-3.5 text-slate-400" />
+          <span className="truncate">{task.address}</span>
+        </div>
+      )}
+      {task.assignee && (
+        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+          <UserIcon className="w-3.5 h-3.5 text-slate-400" />
+          <span>{task.assignee}</span>
+        </div>
+      )}
+    </div>
+
+    {/* Tags / Footer */}
+    <div className="flex items-center justify-between pt-3 border-t border-slate-50 mt-2">
+      <div className="flex gap-1.5">
+        {task.checkStatus === 'clean' && (
+          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-semibold rounded-md border border-emerald-100">Temiz</span>
+        )}
+        {task.checkStatus === 'missing' && (
+          <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-semibold rounded-md border border-amber-100">Eksik</span>
+        )}
+      </div>
+      <span className="text-[10px] text-slate-400 font-medium">
+        {new Date(task.date || task.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
+      </span>
+    </div>
+
+  </div>
+);
 
 export default KanbanBoard;
