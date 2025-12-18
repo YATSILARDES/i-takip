@@ -66,7 +66,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, onNavigate, onTaskClick })
         .slice(0, 5);
 
     return (
-        <div className="flex flex-col h-full overflow-hidden bg-slate-50">
+        <div className="flex flex-col h-full overflow-hidden bg-slate-100">
 
             {/* Breadcrumb Bar */}
             <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center gap-2 text-sm text-slate-500 mb-6 shadow-sm">
